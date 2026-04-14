@@ -24,7 +24,6 @@ app.get("/", (req, res) => {
   res.send("API FUNCIONANDO 🔥");
 });
 
-
 // 🔐 LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -37,7 +36,7 @@ app.post("/login", async (req, res) => {
 
     if (error) throw error;
 
-    let rol = email.toLowerCase().includes("admin") ? "admin" : "tecnico";
+    const rol = email.toLowerCase().includes("admin") ? "admin" : "tecnico";
 
     res.json({
       user: {
@@ -47,11 +46,10 @@ app.post("/login", async (req, res) => {
       }
     });
 
-  } catch {
+  } catch (err) {
     res.status(401).json({ error: "Credenciales incorrectas" });
   }
 });
-
 
 // 📦 TODAS LAS MÁQUINAS
 app.get("/maquinas", async (req, res) => {
@@ -68,27 +66,29 @@ app.get("/maquinas", async (req, res) => {
   }
 });
 
-
-// 🔥 DETALLE CON HISTORIAL (CLAVE)
+// 🔥 DETALLE CON HISTORIAL
 app.get("/maquinas/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { data: maquina } = await supabase
+    const { data: maquina, error } = await supabase
       .from("maquinas")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
+    if (error) throw error;
     if (!maquina) {
       return res.status(404).json({ error: "No existe" });
     }
 
-    const { data: mantenimientos } = await supabase
+    const { data: mantenimientos, error: errMant } = await supabase
       .from("mantenimiento")
       .select("*")
       .eq("maquinas_id", id)
       .order("fecha", { ascending: false });
+
+    if (errMant) throw errMant;
 
     const resultado = await Promise.all(
       (mantenimientos || []).map(async (m) => {
@@ -128,7 +128,6 @@ app.get("/maquinas/:id", async (req, res) => {
   }
 });
 
-
 // ➕ CREAR MÁQUINA
 app.post("/maquinas", async (req, res) => {
   const {
@@ -138,6 +137,12 @@ app.post("/maquinas", async (req, res) => {
   } = req.body;
 
   try {
+    if (!codigo || !serial_maquina || !serial_billetero) {
+      return res.status(400).json({
+        error: "Faltan campos obligatorios ❌"
+      });
+    }
+
     const { data: existe } = await supabase
       .from("maquinas")
       .select("id")
@@ -180,16 +185,20 @@ app.get("/usuarios", async (req, res) => {
   }
 });
 
-// 🛠️ CREAR MANTENIMIENTO (🔥 FALTABA ESTO)
+// 🛠️ CREAR MANTENIMIENTO
 app.post("/mantenimiento", async (req, res) => {
   const { descripcion, maquinas_id, usuarios_id } = req.body;
 
   try {
+    if (!descripcion) {
+      return res.status(400).json({ error: "Falta descripción" });
+    }
+
     if (!usuarios_id || usuarios_id.length === 0) {
       return res.status(400).json({ error: "Sin técnicos" });
     }
 
-    const { data: mant } = await supabase
+    const { data: mant, error } = await supabase
       .from("mantenimiento")
       .insert([{
         descripcion,
@@ -199,14 +208,18 @@ app.post("/mantenimiento", async (req, res) => {
       .select()
       .single();
 
+    if (error) throw error;
+
     const relaciones = usuarios_id.map(uid => ({
       mantenimiento_id: mant.id,
       usuarios_id: uid
     }));
 
-    await supabase
+    const { error: errorRel } = await supabase
       .from("mantenimiento_usuarios")
       .insert(relaciones);
+
+    if (errorRel) throw errorRel;
 
     res.json({ message: "Mantenimiento creado ✅" });
 
@@ -214,7 +227,6 @@ app.post("/mantenimiento", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // 🗑️ ELIMINAR MANTENIMIENTO
 app.delete("/mantenimiento/:id", async (req, res) => {
@@ -232,6 +244,55 @@ app.delete("/mantenimiento/:id", async (req, res) => {
       .eq("id", id);
 
     res.json({ message: "Eliminado ✅" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 🗑️ ELIMINAR MÁQUINA (🔥 FULL FIX)
+app.delete("/maquinas/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 🔹 obtener mantenimientos
+    const { data: mantenimientos } = await supabase
+      .from("mantenimiento")
+      .select("id")
+      .eq("maquinas_id", id);
+
+    const mantIds = mantenimientos?.map(m => m.id) || [];
+
+    // 🔹 borrar relaciones
+    if (mantIds.length > 0) {
+      await supabase
+        .from("mantenimiento_usuarios")
+        .delete()
+        .in("mantenimiento_id", mantIds);
+    }
+
+    // 🔹 borrar mantenimientos
+    await supabase
+      .from("mantenimiento")
+      .delete()
+      .eq("maquinas_id", id);
+
+    // 🔹 borrar máquina
+    const { data, error } = await supabase
+      .from("maquinas")
+      .delete()
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(400).json({
+        error: "No se eliminó (RLS o ID incorrecto)"
+      });
+    }
+
+    res.json({ message: "Máquina eliminada ✅" });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
