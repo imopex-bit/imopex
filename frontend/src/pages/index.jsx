@@ -19,7 +19,7 @@ export default function Index() {
 
   const [seleccionada, setSeleccionada] = useState(null);
   const [editando, setEditando] = useState(null);
-  const [creando, setCreando] = useState(null); // 🔥 NUEVO
+  const [creando, setCreando] = useState(false);
 
   const navigate = useNavigate();
 
@@ -67,9 +67,10 @@ export default function Index() {
     navigate("/");
   };
 
-  const tipos = [...new Set(todas.map(m => m.tipo_maquina))];
+  // 🔥 datos dinámicos
+  const tipos = [...new Set(todas.map(m => m.tipo_maquina))].filter(Boolean);
   const estados = ["funcional", "no funcional"];
-  const localidades = [...new Set(todas.map(m => m.localidad))];
+  const localidades = [...new Set(todas.map(m => m.localidad))].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6">
@@ -90,7 +91,7 @@ export default function Index() {
           </button>
         </div>
 
-        {/* 🔥 BOTÓN CREAR MODAL */}
+        {/* 🔥 BOTÓN CREAR */}
         <button
           onClick={() => setCreando(true)}
           className="mb-6 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
@@ -212,7 +213,8 @@ export default function Index() {
           </table>
         </div>
 
-        {/* MODAL VER */}
+        {/* MODALES */}
+
         {seleccionada && (
           <ModalMaquina
             maquina={seleccionada}
@@ -220,7 +222,6 @@ export default function Index() {
           />
         )}
 
-        {/* MODAL EDITAR */}
         {editando && (
           <ModalEditarMaquina
             maquina={editando}
@@ -229,11 +230,12 @@ export default function Index() {
           />
         )}
 
-        {/* 🔥 MODAL CREAR */}
         {creando && (
           <ModalCrearMaquina
             onClose={() => setCreando(false)}
             onCreated={cargar}
+            tipos={tipos}
+            localidades={localidades}
           />
         )}
 
