@@ -29,7 +29,12 @@ function Login() {
         return;
       }
 
+      // 🔐 GUARDAR TOKEN (CORRECTO)
+      localStorage.setItem("token", data.token);
+
+      // 👤 GUARDAR USUARIO
       localStorage.setItem("user", JSON.stringify(data.user));
+
       navigate("/dashboard");
 
     } catch {
@@ -53,7 +58,7 @@ function Login() {
           placeholder="Correo"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full p-3 mb-4 border rounded-lg"
         />
 
         <input
@@ -61,12 +66,12 @@ function Login() {
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full p-3 mb-4 border rounded-lg"
         />
 
         <button 
           type="submit"
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition"
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg"
         >
           Entrar
         </button>

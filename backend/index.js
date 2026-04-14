@@ -11,7 +11,11 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 
 const app = express();
 
-app.use(cors());
+// 🔐 CORS SOLO TU FRONTEND
+app.use(cors({
+  origin: "https://imopex.vercel.app"
+}));
+
 app.use(express.json());
 
 const supabase = createClient(
@@ -19,12 +23,30 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
+// 🔐 MIDDLEWARE AUTH
+const authMiddleware = async (req, res, next) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(401).json({ error: "No autorizado ❌" });
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+
+  if (error || !data.user) {
+    return res.status(401).json({ error: "Token inválido ❌" });
+  }
+
+  req.user = data.user;
+  next();
+};
+
 // 🟢 ROOT
 app.get("/api", (req, res) => {
   res.send("API FUNCIONANDO 🔥");
 });
 
-// 🔐 LOGIN
+// 🔐 LOGIN (NO PROTEGIDO)
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -43,7 +65,8 @@ app.post("/api/login", async (req, res) => {
         id: data.user.id,
         email: data.user.email,
         rol
-      }
+      },
+      session: data.session // 🔥 IMPORTANTE (para token)
     });
 
   } catch {
@@ -52,7 +75,7 @@ app.post("/api/login", async (req, res) => {
 });
 
 // 📦 TODAS LAS MÁQUINAS
-app.get("/api/maquinas", async (req, res) => {
+app.get("/api/maquinas", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("maquinas")
@@ -66,18 +89,17 @@ app.get("/api/maquinas", async (req, res) => {
   }
 });
 
-// 🔥 DETALLE CON HISTORIAL
-app.get("/api/maquinas/:id", async (req, res) => {
+// 🔥 DETALLE
+app.get("/api/maquinas/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { data: maquina, error } = await supabase
+    const { data: maquina } = await supabase
       .from("maquinas")
       .select("*")
       .eq("id", id)
       .maybeSingle();
 
-    if (error) throw error;
     if (!maquina) {
       return res.status(404).json({ error: "No existe" });
     }
@@ -127,29 +149,8 @@ app.get("/api/maquinas/:id", async (req, res) => {
 });
 
 // ➕ CREAR MÁQUINA
-app.post("/api/maquinas", async (req, res) => {
-  const { codigo, serial_maquina, serial_billetero } = req.body;
-
+app.post("/api/maquinas", authMiddleware, async (req, res) => {
   try {
-    if (!codigo || !serial_maquina || !serial_billetero) {
-      return res.status(400).json({
-        error: "Faltan campos obligatorios ❌"
-      });
-    }
-
-    const { data: existe } = await supabase
-      .from("maquinas")
-      .select("id")
-      .or(
-        `codigo.eq.${codigo},serial_maquina.eq.${serial_maquina},serial_billetero.eq.${serial_billetero}`
-      );
-
-    if (existe && existe.length > 0) {
-      return res.status(400).json({
-        error: "Código o serial ya existe ❌"
-      });
-    }
-
     const { data, error } = await supabase
       .from("maquinas")
       .insert([req.body])
@@ -164,24 +165,21 @@ app.post("/api/maquinas", async (req, res) => {
   }
 });
 
-// ✏️ EDITAR MÁQUINA (🔥 LO QUE TE FALTABA)
-app.put("/api/maquinas/:id", async (req, res) => {
+// ✏️ EDITAR MÁQUINA
+app.put("/api/maquinas/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { estado, localidad } = req.body;
 
   try {
     const { data, error } = await supabase
       .from("maquinas")
-      .update({
-        estado,
-        localidad
-      })
+      .update({ estado, localidad })
       .eq("id", id)
       .select();
 
     if (error) throw error;
 
-    res.json({ message: "Máquina actualizada ✅", data });
+    res.json({ message: "Actualizado ✅", data });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -189,7 +187,7 @@ app.put("/api/maquinas/:id", async (req, res) => {
 });
 
 // 👤 USUARIOS
-app.get("/api/usuarios", async (req, res) => {
+app.get("/api/usuarios", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("usuarios")
@@ -204,19 +202,11 @@ app.get("/api/usuarios", async (req, res) => {
 });
 
 // 🛠️ CREAR MANTENIMIENTO
-app.post("/api/mantenimiento", async (req, res) => {
+app.post("/api/mantenimiento", authMiddleware, async (req, res) => {
   const { descripcion, maquinas_id, usuarios_id } = req.body;
 
   try {
-    if (!descripcion) {
-      return res.status(400).json({ error: "Falta descripción" });
-    }
-
-    if (!usuarios_id || usuarios_id.length === 0) {
-      return res.status(400).json({ error: "Sin técnicos" });
-    }
-
-    const { data: mant, error } = await supabase
+    const { data: mant } = await supabase
       .from("mantenimiento")
       .insert([{
         descripcion,
@@ -225,8 +215,6 @@ app.post("/api/mantenimiento", async (req, res) => {
       }])
       .select()
       .single();
-
-    if (error) throw error;
 
     const relaciones = usuarios_id.map(uid => ({
       mantenimiento_id: mant.id,
@@ -245,7 +233,7 @@ app.post("/api/mantenimiento", async (req, res) => {
 });
 
 // 🗑️ ELIMINAR MANTENIMIENTO
-app.delete("/api/mantenimiento/:id", async (req, res) => {
+app.delete("/api/mantenimiento/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -267,41 +255,23 @@ app.delete("/api/mantenimiento/:id", async (req, res) => {
 });
 
 // 🗑️ ELIMINAR MÁQUINA
-app.delete("/api/maquinas/:id", async (req, res) => {
+app.delete("/api/maquinas/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { data: mantenimientos } = await supabase
-      .from("mantenimiento")
-      .select("id")
-      .eq("maquinas_id", id);
-
-    const mantIds = mantenimientos?.map(m => m.id) || [];
-
-    if (mantIds.length > 0) {
-      await supabase
-        .from("mantenimiento_usuarios")
-        .delete()
-        .in("mantenimiento_id", mantIds);
-    }
-
     await supabase
       .from("mantenimiento")
       .delete()
       .eq("maquinas_id", id);
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("maquinas")
       .delete()
       .eq("id", id)
       .select();
 
-    if (error) throw error;
-
     if (!data || data.length === 0) {
-      return res.status(400).json({
-        error: "No se eliminó"
-      });
+      return res.status(400).json({ error: "No se eliminó" });
     }
 
     res.json({ message: "Máquina eliminada ✅" });

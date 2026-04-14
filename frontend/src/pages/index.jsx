@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
-
-const API = "https://imopex.onrender.com/api";
+import { apiGet } from "../api"; // 🔥 IMPORTANTE
 
 export default function Index() {
 
@@ -29,11 +28,10 @@ export default function Index() {
     if (!user) navigate("/");
   }, []);
 
-  // 🔹 cargar máquinas
+  // 🔹 cargar máquinas (USANDO api.js)
   const cargar = async () => {
     try {
-      const res = await fetch(`${API}/maquinas`);
-      const data = await res.json();
+      const data = await apiGet("/maquinas");
       setTodas(data || []);
     } catch {
       alert("Error cargando máquinas ❌");
@@ -63,7 +61,7 @@ export default function Index() {
 
   // 🔐 logout
   const logout = () => {
-    localStorage.removeItem("user");
+    localStorage.clear(); // 🔥 ahora limpia token también
     navigate("/");
   };
 
@@ -91,7 +89,7 @@ export default function Index() {
           </button>
         </div>
 
-        {/* 🔥 BOTÓN CREAR */}
+        {/* BOTÓN CREAR */}
         <button
           onClick={() => setCreando(true)}
           className="mb-6 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
