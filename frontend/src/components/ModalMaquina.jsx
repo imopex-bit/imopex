@@ -15,6 +15,9 @@ export default function ModalMaquina({ maquina, onClose }) {
 
   const [loading, setLoading] = useState(true);
 
+  // 🔥 NUEVO
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   // 🔹 cargar detalle máquina
   const cargarDetalle = async () => {
     try {
@@ -53,7 +56,7 @@ export default function ModalMaquina({ maquina, onClose }) {
     cargarUsuarios();
   }, []);
 
-  // 🔎 filtro técnicos (🔥 PRO)
+  // 🔎 filtro técnicos
   useEffect(() => {
     if (!busqueda) {
       setFiltrados([]);
@@ -67,7 +70,7 @@ export default function ModalMaquina({ maquina, onClose }) {
     setFiltrados(f);
   }, [busqueda, usuarios]);
 
-  // 🔥 guardar mantenimiento
+  // 🛠️ guardar mantenimiento
   const guardar = async () => {
     if (!descripcion.trim()) {
       alert("Escribe descripción ❌");
@@ -105,7 +108,7 @@ export default function ModalMaquina({ maquina, onClose }) {
     }
   };
 
-  // 🔥 eliminar mantenimiento
+  // 🗑️ eliminar mantenimiento
   const eliminar = async (id) => {
     if (!window.confirm("¿Eliminar mantenimiento?")) return;
 
@@ -121,20 +124,46 @@ export default function ModalMaquina({ maquina, onClose }) {
     }
   };
 
+  // 🔥 ELIMINAR MÁQUINA
+  const eliminarMaquina = async () => {
+    try {
+      const res = await fetch(`${API}/maquinas/${maquina.id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) throw new Error();
+
+      onClose();
+      window.location.reload();
+
+    } catch {
+      alert("Error eliminando ❌");
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
       <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
 
-        {/* HEADER */}
-        <div className="flex justify-between mb-4">
+        {/* 🔥 HEADER CORREGIDO */}
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             Máquina {maquina.codigo}
           </h2>
 
-          <button onClick={onClose} className="text-red-500 text-lg">
-            ✖
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            >
+              Eliminar
+            </button>
+
+            <button onClick={onClose} className="text-gray-500 text-lg">
+              ✖
+            </button>
+          </div>
         </div>
 
         {/* INFO */}
@@ -146,7 +175,7 @@ export default function ModalMaquina({ maquina, onClose }) {
               {detalle?.descripcion || "Sin descripción"}
             </p>
 
-            {/* 🔥 HISTORIAL */}
+            {/* HISTORIAL */}
             <div className="max-h-52 overflow-y-auto mb-4 border rounded p-2 bg-gray-50">
 
               <h3 className="font-semibold mb-2">Historial</h3>
@@ -169,10 +198,7 @@ export default function ModalMaquina({ maquina, onClose }) {
                   <div className="flex gap-2 flex-wrap mt-1">
                     {m.usuarios?.length > 0 ? (
                       m.usuarios.map((u, i) => (
-                        <span
-                          key={i}
-                          className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
-                        >
+                        <span key={i} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
                           👤 {u}
                         </span>
                       ))
@@ -194,7 +220,7 @@ export default function ModalMaquina({ maquina, onClose }) {
               ))}
             </div>
 
-            {/* INPUT DESCRIPCIÓN */}
+            {/* INPUT */}
             <textarea
               placeholder="Descripción mantenimiento..."
               value={descripcion}
@@ -202,7 +228,7 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-3"
             />
 
-            {/* 🔥 BUSCAR TÉCNICOS */}
+            {/* BUSCAR */}
             <input
               type="text"
               placeholder="Buscar técnico..."
@@ -211,7 +237,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-2"
             />
 
-            {/* RESULTADOS */}
             {filtrados.map(u => (
               <div
                 key={u.id}
@@ -227,7 +252,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               </div>
             ))}
 
-            {/* SELECCIONADOS */}
             <div className="flex gap-2 flex-wrap mt-2">
               {tecnicosSeleccionados.map(id => {
                 const user = usuarios.find(u => u.id === id);
@@ -252,7 +276,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               Seleccionados: {tecnicosSeleccionados.length}
             </p>
 
-            {/* BOTÓN */}
             <button
               onClick={guardar}
               className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded"
@@ -261,8 +284,42 @@ export default function ModalMaquina({ maquina, onClose }) {
             </button>
           </>
         )}
-
       </div>
+
+      {/* 🔥 MODAL CONFIRMAR ELIMINAR */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+
+          <div className="bg-white p-6 rounded-xl shadow-xl w-80 text-center">
+
+            <h2 className="text-lg font-bold mb-3">
+              ¿Eliminar máquina?
+            </h2>
+
+            <p className="text-gray-600 mb-4">
+              Esta acción no se puede deshacer
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="w-full bg-gray-300 p-2 rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={eliminarMaquina}
+                className="w-full bg-red-500 text-white p-2 rounded"
+              >
+                Eliminar
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      )}
     </div>
   );
 }
