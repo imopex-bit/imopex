@@ -1,11 +1,7 @@
 const API = "https://imopex.onrender.com/api";
 
-// 🔐 obtener token
-const getToken = () => {
-  return localStorage.getItem("token");
-};
+const getToken = () => localStorage.getItem("token");
 
-// 🔥 request base
 const request = async (endpoint, options = {}) => {
   const token = getToken();
 
@@ -18,41 +14,28 @@ const request = async (endpoint, options = {}) => {
     }
   });
 
-  // 🔐 si expira sesión
   if (res.status === 401) {
     localStorage.clear();
     window.location.href = "/";
     return;
   }
 
-  const data = await res.json();
-  return data;
+  return res.json();
 };
 
-// 🔹 GET
-export const apiGet = (endpoint) => {
-  return request(endpoint, { method: "GET" });
-};
-
-// 🔹 POST
-export const apiPost = (endpoint, body) => {
-  return request(endpoint, {
-    method: "POST",
-    body: JSON.stringify(body)
-  });
-};
-
-// 🔹 PUT
-export const apiPut = (endpoint, body) => {
-  return request(endpoint, {
-    method: "PUT",
-    body: JSON.stringify(body)
-  });
-};
-
-// 🔹 DELETE
-export const apiDelete = (endpoint) => {
-  return request(endpoint, {
-    method: "DELETE"
-  });
+// 👇 AQUÍ ESTÁ LA CLAVE
+export const api = {
+  get: (endpoint) => request(endpoint, { method: "GET" }),
+  post: (endpoint, body) =>
+    request(endpoint, {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  put: (endpoint, body) =>
+    request(endpoint, {
+      method: "PUT",
+      body: JSON.stringify(body)
+    }),
+  delete: (endpoint) =>
+    request(endpoint, { method: "DELETE" })
 };
