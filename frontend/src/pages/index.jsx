@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 
-const API = "https://imopex.onrender.com/api"; // 🔥 CORREGIDO
+const API = "https://imopex.onrender.com/api";
 
 export default function Index() {
 
@@ -17,6 +17,11 @@ export default function Index() {
 
   const [seleccionada, setSeleccionada] = useState(null);
 
+  // 🔥 NUEVO: edición inline
+  const [editandoId, setEditandoId] = useState(null);
+  const [estadoEdit, setEstadoEdit] = useState("");
+  const [localidadEdit, setLocalidadEdit] = useState("");
+
   const navigate = useNavigate();
 
   // 🔐 proteger ruta
@@ -26,17 +31,17 @@ export default function Index() {
   }, []);
 
   // 🔹 cargar máquinas
-  useEffect(() => {
-    const cargar = async () => {
-      try {
-        const res = await fetch(`${API}/maquinas`);
-        const data = await res.json();
-        setTodas(data || []);
-      } catch {
-        alert("Error cargando máquinas ❌");
-      }
-    };
+  const cargar = async () => {
+    try {
+      const res = await fetch(`${API}/maquinas`);
+      const data = await res.json();
+      setTodas(data || []);
+    } catch {
+      alert("Error cargando máquinas ❌");
+    }
+  };
 
+  useEffect(() => {
     cargar();
   }, []);
 
@@ -67,146 +72,156 @@ export default function Index() {
   const estados = ["funcional", "no funcional"];
   const localidades = [...new Set(todas.map(m => m.localidad))];
 
+  // 🔥 iniciar edición
+  const iniciarEdicion = (m) => {
+    setEditandoId(m.id);
+    setEstadoEdit(m.estado);
+    setLocalidadEdit(m.localidad);
+  };
+
+  // 🔥 guardar cambios
+  const guardarEdicion = async (id) => {
+    try {
+      await fetch(`${API}/maquinas/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          estado: estadoEdit,
+          localidad: localidadEdit
+        })
+      });
+
+      setEditandoId(null);
+      cargar();
+
+    } catch {
+      alert("Error guardando ❌");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6">
+    <div className="min-h-screen bg-gray-100 p-6">
 
       <div className="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
 
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h1 className="text-3xl font-bold text-gray-800">
-            ⚙️ Gestor de Máquinas
-          </h1>
+        <div className="flex justify-between mb-6">
+          <h1 className="text-2xl font-bold">Máquinas</h1>
 
           <button
             onClick={logout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+            className="bg-red-500 text-white px-4 py-2 rounded"
           >
             Cerrar sesión
           </button>
         </div>
 
-        {/* BOTÓN */}
         <button
           onClick={() => navigate("/crear")}
-          className="mb-6 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
+          className="mb-4 bg-green-500 text-white px-4 py-2 rounded"
         >
           + Añadir máquina
         </button>
 
-        {/* BUSCADOR */}
         <input
-          placeholder="Buscar por código..."
+          placeholder="Buscar..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full p-3 border rounded-lg mb-4 shadow-sm"
+          className="w-full p-2 border rounded mb-4"
         />
 
-        {/* FILTROS */}
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <table className="w-full border">
 
-          <select
-            onChange={(e) => setFiltroTipo(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
-            <option value="">Tipo</option>
-            {tipos.map((t, i) => <option key={i}>{t}</option>)}
-          </select>
+          <thead className="bg-gray-800 text-white">
+            <tr>
+              <th className="p-2">Código</th>
+              <th className="p-2">Estado</th>
+              <th className="p-2">Localidad</th>
+              <th className="p-2">Acciones</th>
+            </tr>
+          </thead>
 
-          <select
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
-            <option value="">Estado</option>
-            {estados.map((e, i) => <option key={i}>{e}</option>)}
-          </select>
+          <tbody>
+            {maquinas.map(m => (
+              <tr key={m.id} className="border">
 
-          <select
-            onChange={(e) => setFiltroLocalidad(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
-            <option value="">Localidad</option>
-            {localidades.map((l, i) => <option key={i}>{l}</option>)}
-          </select>
+                <td className="p-2">{m.codigo}</td>
 
-        </div>
+                {/* 🔥 ESTADO */}
+                <td className="p-2">
+                  {editandoId === m.id ? (
+                    <select
+                      value={estadoEdit}
+                      onChange={(e) => setEstadoEdit(e.target.value)}
+                      className="border p-1"
+                    >
+                      <option value="funcional">Funcional</option>
+                      <option value="no funcional">No funcional</option>
+                    </select>
+                  ) : (
+                    m.estado
+                  )}
+                </td>
 
-        {/* TABLA */}
-        <div className="overflow-x-auto rounded-xl shadow">
+                {/* 🔥 LOCALIDAD */}
+                <td className="p-2">
+                  {editandoId === m.id ? (
+                    <input
+                      value={localidadEdit}
+                      onChange={(e) => setLocalidadEdit(e.target.value)}
+                      className="border p-1"
+                    />
+                  ) : (
+                    m.localidad
+                  )}
+                </td>
 
-          <table className="w-full text-sm text-left">
+                {/* 🔥 ACCIONES */}
+                <td className="p-2 flex gap-2">
 
-            <thead className="bg-gray-900 text-white">
-              <tr>
-                <th className="p-3">#</th>
-                <th className="p-3">Código</th>
-                <th className="p-3">Serial Máquina</th>
-                <th className="p-3">Serial Billetero</th>
-                <th className="p-3">Tipo</th>
-                <th className="p-3">Estado</th>
-                <th className="p-3">Localidad</th>
-                <th className="p-3 text-center">Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {maquinas.map((m, i) => (
-                <tr key={m.id} className="border-b hover:bg-gray-100 transition">
-
-                  <td className="p-3 text-gray-500">{i + 1}</td>
-
-                  <td className="p-3 font-semibold text-gray-800">
-                    {m.codigo}
-                  </td>
-
-                  <td className="p-3">{m.serial_maquina || "-"}</td>
-                  <td className="p-3">{m.serial_billetero || "-"}</td>
-
-                  <td className="p-3">
-                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
-                      {m.tipo_maquina}
-                    </span>
-                  </td>
-
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                      ${m.estado === "funcional" ? "bg-green-100 text-green-700" : ""}
-                      ${m.estado === "no funcional" ? "bg-red-100 text-red-700" : ""}
-                    `}>
-                      {m.estado}
-                    </span>
-                  </td>
-
-                  <td className="p-3 text-gray-600">
-                    {m.localidad}
-                  </td>
-
-                  <td className="p-3">
-                    <div className="flex gap-2 justify-center">
+                  {editandoId === m.id ? (
+                    <>
+                      <button
+                        onClick={() => guardarEdicion(m.id)}
+                        className="bg-green-500 text-white px-2 py-1 rounded"
+                      >
+                        Guardar
+                      </button>
 
                       <button
-                        onClick={() => navigate(`/editar/${m.id}`)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs"
+                        onClick={() => setEditandoId(null)}
+                        className="bg-gray-400 text-white px-2 py-1 rounded"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => iniciarEdicion(m)}
+                        className="bg-blue-500 text-white px-2 py-1 rounded"
                       >
                         Editar
                       </button>
 
                       <button
                         onClick={() => setSeleccionada(m)}
-                        className="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded-lg text-xs"
+                        className="bg-gray-700 text-white px-2 py-1 rounded"
                       >
                         Ver
                       </button>
+                    </>
+                  )}
 
-                    </div>
-                  </td>
+                </td>
 
-                </tr>
-              ))}
-            </tbody>
+              </tr>
+            ))}
+          </tbody>
 
-          </table>
-        </div>
+        </table>
 
         {/* MODAL */}
         {seleccionada && (

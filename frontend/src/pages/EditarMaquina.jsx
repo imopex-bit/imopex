@@ -22,19 +22,23 @@ export default function EditarMaquina() {
 
   useEffect(() => {
     const cargar = async () => {
+      try {
+        const res = await fetch(`${API}/maquinas/${id}`);
+        const data = await res.json();
 
-      const res = await fetch(`${API}/maquinas/${id}`);
-      const data = await res.json();
+        setMaquina(data);
+        setEstado(data.estado || "");
+        setLocalidad(data.localidad || "");
 
-      setMaquina(data);
-      setEstado(data.estado);
-      setLocalidad(data.localidad);
+        const res2 = await fetch(`${API}/maquinas`);
+        const data2 = await res2.json();
 
-      const res2 = await fetch(`${API}/maquinas`);
-      const data2 = await res2.json();
+        const unicas = [...new Set(data2.map(m => m.localidad))];
+        setLocalidades(unicas);
 
-      const unicas = [...new Set(data2.map(m => m.localidad))];
-      setLocalidades(unicas);
+      } catch {
+        alert("Error cargando datos ❌");
+      }
     };
 
     cargar();
@@ -63,7 +67,7 @@ export default function EditarMaquina() {
     if (hayError) return;
 
     try {
-      await fetch(`${API}/maquinas/${id}`, {
+      const res = await fetch(`${API}/maquinas/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -74,14 +78,21 @@ export default function EditarMaquina() {
         })
       });
 
+      // 🔥 CLAVE: validar respuesta
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      alert("Máquina actualizada ✅");
+
       navigate("/dashboard");
 
     } catch {
-      console.log("Error");
+      alert("Error actualizando ❌");
     }
   };
 
-  if (!maquina) return <p>Cargando...</p>;
+  if (!maquina) return <p className="text-center mt-10">Cargando...</p>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -119,7 +130,7 @@ export default function EditarMaquina() {
         <label className="block mb-1 mt-3">Ubicación</label>
 
         <select
-          value={localidad}
+          value={usarNueva ? "nueva" : localidad}
           onChange={(e) => {
             if (e.target.value === "nueva") {
               setUsarNueva(true);
@@ -137,7 +148,7 @@ export default function EditarMaquina() {
           <option value="">Seleccionar ubicación</option>
 
           {localidades.map((l, i) => (
-            <option key={i}>{l}</option>
+            <option key={i} value={l}>{l}</option>
           ))}
 
           <option value="nueva">➕ Nueva ubicación</option>

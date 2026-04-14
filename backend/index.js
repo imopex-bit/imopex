@@ -1,14 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
   throw new Error("❌ Faltan variables de entorno");
@@ -18,9 +13,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-// 🔥 SERVIR FRONTEND (dist)
-app.use(express.static(path.join(__dirname, "dist")));
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -172,6 +164,30 @@ app.post("/api/maquinas", async (req, res) => {
   }
 });
 
+// ✏️ EDITAR MÁQUINA (🔥 LO QUE TE FALTABA)
+app.put("/api/maquinas/:id", async (req, res) => {
+  const { id } = req.params;
+  const { estado, localidad } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("maquinas")
+      .update({
+        estado,
+        localidad
+      })
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+
+    res.json({ message: "Máquina actualizada ✅", data });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 👤 USUARIOS
 app.get("/api/usuarios", async (req, res) => {
   try {
@@ -293,11 +309,6 @@ app.delete("/api/maquinas/:id", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
-
-// 🔥 FIX FINAL (React Router)
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 // 🚀 SERVER
