@@ -23,9 +23,12 @@ export default function MaquinaDetalle() {
   // 🔹 cargar máquina
   const cargarMaquina = async () => {
     try {
+      setLoading(true); // 🔥 FIX
+
       const res = await fetch(`${API}/maquinas/${id}`);
       const data = await res.json();
       setMaquina(data);
+
     } catch {
       alert("Error cargando máquina ❌");
     } finally {
@@ -67,7 +70,7 @@ export default function MaquinaDetalle() {
   const crearMantenimiento = async (e) => {
     e.preventDefault();
 
-    if (!descripcion || seleccionados.length === 0) {
+    if (!descripcion.trim() || seleccionados.length === 0) {
       alert("Faltan datos ❌");
       return;
     }
@@ -122,21 +125,23 @@ export default function MaquinaDetalle() {
 
       <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
 
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-4">
+        {/* HEADER 🔥 MEJORADO */}
+        <div className="flex justify-between items-center mb-6">
+
           <button
             onClick={() => navigate("/dashboard")}
-            className="text-blue-500"
+            className="text-blue-600 hover:underline"
           >
             ← Volver
           </button>
 
           <button
             onClick={() => setConfirmDelete(true)}
-            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow"
           >
-            Eliminar máquina
+            🗑️ Eliminar máquina
           </button>
+
         </div>
 
         {/* INFO */}
@@ -239,7 +244,7 @@ export default function MaquinaDetalle() {
         </div>
       </div>
 
-      {/* 🔥 MODAL CONFIRMAR ELIMINAR */}
+      {/* MODAL ELIMINAR */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
 
@@ -263,7 +268,7 @@ export default function MaquinaDetalle() {
 
               <button
                 onClick={eliminarMaquina}
-                className="w-full bg-red-500 text-white p-2 rounded"
+                className="w-full bg-red-600 text-white p-2 rounded"
               >
                 Eliminar
               </button>
