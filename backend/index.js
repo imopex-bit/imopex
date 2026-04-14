@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -19,13 +21,13 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// 🟢 ROOT
-app.get("/", (req, res) => {
+// 🟢 ROOT API
+app.get("/api", (req, res) => {
   res.send("API FUNCIONANDO 🔥");
 });
 
 // 🔐 LOGIN
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -46,13 +48,13 @@ app.post("/login", async (req, res) => {
       }
     });
 
-  } catch (err) {
+  } catch {
     res.status(401).json({ error: "Credenciales incorrectas" });
   }
 });
 
 // 📦 TODAS LAS MÁQUINAS
-app.get("/maquinas", async (req, res) => {
+app.get("/api/maquinas", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("maquinas")
@@ -67,7 +69,7 @@ app.get("/maquinas", async (req, res) => {
 });
 
 // 🔥 DETALLE CON HISTORIAL
-app.get("/maquinas/:id", async (req, res) => {
+app.get("/api/maquinas/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -82,17 +84,14 @@ app.get("/maquinas/:id", async (req, res) => {
       return res.status(404).json({ error: "No existe" });
     }
 
-    const { data: mantenimientos, error: errMant } = await supabase
+    const { data: mantenimientos } = await supabase
       .from("mantenimiento")
       .select("*")
       .eq("maquinas_id", id)
       .order("fecha", { ascending: false });
 
-    if (errMant) throw errMant;
-
     const resultado = await Promise.all(
       (mantenimientos || []).map(async (m) => {
-
         const { data: rel } = await supabase
           .from("mantenimiento_usuarios")
           .select("usuarios_id")
@@ -129,12 +128,8 @@ app.get("/maquinas/:id", async (req, res) => {
 });
 
 // ➕ CREAR MÁQUINA
-app.post("/maquinas", async (req, res) => {
-  const {
-    codigo,
-    serial_maquina,
-    serial_billetero
-  } = req.body;
+app.post("/api/maquinas", async (req, res) => {
+  const { codigo, serial_maquina, serial_billetero } = req.body;
 
   try {
     if (!codigo || !serial_maquina || !serial_billetero) {
@@ -170,8 +165,8 @@ app.post("/maquinas", async (req, res) => {
   }
 });
 
-// 👤 LISTAR USUARIOS
-app.get("/usuarios", async (req, res) => {
+// 👤 USUARIOS
+app.get("/api/usuarios", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("usuarios")
@@ -186,7 +181,7 @@ app.get("/usuarios", async (req, res) => {
 });
 
 // 🛠️ CREAR MANTENIMIENTO
-app.post("/mantenimiento", async (req, res) => {
+app.post("/api/mantenimiento", async (req, res) => {
   const { descripcion, maquinas_id, usuarios_id } = req.body;
 
   try {
@@ -198,7 +193,7 @@ app.post("/mantenimiento", async (req, res) => {
       return res.status(400).json({ error: "Sin técnicos" });
     }
 
-    const { data: mant, error } = await supabase
+    const { data: mant } = await supabase
       .from("mantenimiento")
       .insert([{
         descripcion,
@@ -208,18 +203,14 @@ app.post("/mantenimiento", async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
-
     const relaciones = usuarios_id.map(uid => ({
       mantenimiento_id: mant.id,
       usuarios_id: uid
     }));
 
-    const { error: errorRel } = await supabase
+    await supabase
       .from("mantenimiento_usuarios")
       .insert(relaciones);
-
-    if (errorRel) throw errorRel;
 
     res.json({ message: "Mantenimiento creado ✅" });
 
@@ -229,7 +220,7 @@ app.post("/mantenimiento", async (req, res) => {
 });
 
 // 🗑️ ELIMINAR MANTENIMIENTO
-app.delete("/mantenimiento/:id", async (req, res) => {
+app.delete("/api/mantenimiento/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -250,12 +241,11 @@ app.delete("/mantenimiento/:id", async (req, res) => {
   }
 });
 
-// 🗑️ ELIMINAR MÁQUINA (🔥 FULL FIX)
-app.delete("/maquinas/:id", async (req, res) => {
+// 🗑️ ELIMINAR MÁQUINA
+app.delete("/api/maquinas/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    // 🔹 obtener mantenimientos
     const { data: mantenimientos } = await supabase
       .from("mantenimiento")
       .select("id")
@@ -263,7 +253,6 @@ app.delete("/maquinas/:id", async (req, res) => {
 
     const mantIds = mantenimientos?.map(m => m.id) || [];
 
-    // 🔹 borrar relaciones
     if (mantIds.length > 0) {
       await supabase
         .from("mantenimiento_usuarios")
@@ -271,13 +260,11 @@ app.delete("/maquinas/:id", async (req, res) => {
         .in("mantenimiento_id", mantIds);
     }
 
-    // 🔹 borrar mantenimientos
     await supabase
       .from("mantenimiento")
       .delete()
       .eq("maquinas_id", id);
 
-    // 🔹 borrar máquina
     const { data, error } = await supabase
       .from("maquinas")
       .delete()
@@ -298,6 +285,23 @@ app.delete("/maquinas/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+// ===============================
+// 🔥 SERVIR FRONTEND (CLAVE)
+// ===============================
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// servir build
+app.use(express.static(path.join(__dirname, "dist")));
+
+// fallback React Router
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
 
 // 🚀 SERVER
 const PORT = process.env.PORT || 3000;
