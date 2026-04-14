@@ -165,6 +165,20 @@ app.post("/maquinas", async (req, res) => {
   }
 });
 
+// 👤 LISTAR USUARIOS
+app.get("/usuarios", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("id, nombre");
+
+    if (error) throw error;
+
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 🛠️ CREAR MANTENIMIENTO (🔥 FALTABA ESTO)
 app.post("/mantenimiento", async (req, res) => {
