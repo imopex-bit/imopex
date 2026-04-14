@@ -237,7 +237,9 @@ app.delete("/mantenimiento/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
+app.get("/test", (req, res) => {
+  res.send("FUNCIONA 🔥");
+});
 
 // 🚀 SERVER
 const PORT = process.env.PORT || 3000;
