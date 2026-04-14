@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
-import { api } from "../api"; // 🔥 USAMOS api COMPLETO
+import { api } from "../api";
 
 export default function Index() {
 
@@ -22,7 +22,7 @@ export default function Index() {
 
   const navigate = useNavigate();
 
-  // 🔐 proteger ruta BIEN
+  // 🔐 proteger ruta
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) navigate("/");
@@ -31,15 +31,7 @@ export default function Index() {
   // 🔹 cargar máquinas
   const cargar = async () => {
     try {
-      const res = await api.get("/maquinas");
-
-      if (res.status === 401) {
-        localStorage.clear();
-        navigate("/");
-        return;
-      }
-
-      const data = await res.json();
+      const data = await api.get("/maquinas"); // 🔥 YA ES JSON
 
       setTodas(data || []);
 
@@ -119,26 +111,17 @@ export default function Index() {
         {/* FILTROS */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
 
-          <select
-            onChange={(e) => setFiltroTipo(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
+          <select onChange={(e) => setFiltroTipo(e.target.value)} className="p-2 border rounded-lg">
             <option value="">Tipo</option>
             {tipos.map((t, i) => <option key={i}>{t}</option>)}
           </select>
 
-          <select
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
+          <select onChange={(e) => setFiltroEstado(e.target.value)} className="p-2 border rounded-lg">
             <option value="">Estado</option>
             {estados.map((e, i) => <option key={i}>{e}</option>)}
           </select>
 
-          <select
-            onChange={(e) => setFiltroLocalidad(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
+          <select onChange={(e) => setFiltroLocalidad(e.target.value)} className="p-2 border rounded-lg">
             <option value="">Localidad</option>
             {localidades.map((l, i) => <option key={i}>{l}</option>)}
           </select>
@@ -168,11 +151,7 @@ export default function Index() {
                 <tr key={m.id} className="border-b hover:bg-gray-100 transition">
 
                   <td className="p-3 text-gray-500">{i + 1}</td>
-
-                  <td className="p-3 font-semibold text-gray-800">
-                    {m.codigo}
-                  </td>
-
+                  <td className="p-3 font-semibold text-gray-800">{m.codigo}</td>
                   <td className="p-3">{m.serial_maquina || "-"}</td>
                   <td className="p-3">{m.serial_billetero || "-"}</td>
 
@@ -191,9 +170,7 @@ export default function Index() {
                     </span>
                   </td>
 
-                  <td className="p-3 text-gray-600">
-                    {m.localidad}
-                  </td>
+                  <td className="p-3 text-gray-600">{m.localidad}</td>
 
                   <td className="p-3">
                     <div className="flex gap-2 justify-center">
@@ -242,8 +219,6 @@ export default function Index() {
           <ModalCrearMaquina
             onClose={() => setCreando(false)}
             onCreated={cargar}
-            tipos={tipos}
-            localidades={localidades}
           />
         )}
 

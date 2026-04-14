@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiGet, apiPost } from "../api";
+import { api } from "../api";
 
 export default function ModalCrearMaquina({ onClose, onCreated }) {
 
@@ -25,7 +25,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const data = await apiGet("/maquinas");
+        const data = await api.get("/maquinas"); // ✅ FIX
 
         const tiposUnicos = [...new Set(data.map(m => m.tipo_maquina))];
         const locUnicas = [...new Set(data.map(m => m.localidad))];
@@ -57,7 +57,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
     try {
       setLoading(true);
 
-      await apiPost("/maquinas", {
+      await api.post("/maquinas", { // ✅ FIX
         codigo: codigo.trim(),
         serial_maquina: serialMaquina.trim(),
         serial_billetero: serialBilletero.trim(),
@@ -78,7 +78,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
       setUsarNuevaLocalidad(false);
       setUsarNuevoTipo(false);
 
-      onCreated(); // recargar tabla
+      onCreated();
       onClose();
 
     } catch {
@@ -93,7 +93,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
 
       <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             ➕ Nueva Máquina
@@ -104,7 +103,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           </button>
         </div>
 
-        {/* FORM */}
         <input
           placeholder="Código"
           value={codigo}
@@ -126,7 +124,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           className="w-full border p-2 rounded mb-3"
         />
 
-        {/* TIPO */}
         <label className="text-sm">Tipo</label>
         <select
           value={tipo}
@@ -159,7 +156,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           />
         )}
 
-        {/* ESTADO */}
         <label className="text-sm">Estado</label>
         <select
           value={estado}
@@ -171,7 +167,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           <option value="no funcional">No funcional</option>
         </select>
 
-        {/* LOCALIDAD */}
         <label className="text-sm">Ubicación</label>
         <select
           value={usarNuevaLocalidad ? "nueva" : localidad}
@@ -204,7 +199,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           />
         )}
 
-        {/* BOTÓN */}
         <button
           onClick={guardar}
           disabled={loading}

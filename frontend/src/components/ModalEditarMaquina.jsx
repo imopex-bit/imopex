@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiGet, apiPut } from "../api";
+import { api } from "../api";
 
 export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
@@ -21,7 +21,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
     const cargarLocalidades = async () => {
       try {
-        const data = await apiGet("/maquinas");
+        const data = await api.get("/maquinas");
 
         const unicas = [...new Set(data.map(m => m.localidad))];
         setLocalidades(unicas);
@@ -46,7 +46,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
     if (!finalLocalidad) return alert("Selecciona ubicación ❌");
 
     try {
-      await apiPut(`/maquinas/${maquina.id}`, {
+      await api.put(`/maquinas/${maquina.id}`, {
         estado,
         localidad: finalLocalidad
       });

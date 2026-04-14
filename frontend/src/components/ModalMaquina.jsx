@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiGet, apiPost, apiDelete } from "../api";
+import { api } from "../api";
 
 export default function ModalMaquina({ maquina, onClose }) {
 
@@ -21,7 +21,7 @@ export default function ModalMaquina({ maquina, onClose }) {
 
     try {
       setLoading(true);
-      const data = await apiGet(`/maquinas/${maquina.id}`);
+      const data = await api.get(`/maquinas/${maquina.id}`);
       setDetalle(data);
     } catch {
       alert("Error cargando detalle ❌");
@@ -38,7 +38,7 @@ export default function ModalMaquina({ maquina, onClose }) {
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const data = await apiGet("/usuarios");
+        const data = await api.get("/usuarios");
         setUsuarios(data || []);
       } catch {
         alert("Error cargando usuarios ❌");
@@ -92,13 +92,12 @@ export default function ModalMaquina({ maquina, onClose }) {
     }
 
     try {
-      await apiPost("/mantenimiento", {
+      await api.post("/mantenimiento", {
         descripcion,
         maquinas_id: maquina.id,
         usuarios_id: tecnicosSeleccionados
       });
 
-      // limpiar
       setDescripcion("");
       setTecnicosSeleccionados([]);
       setBusqueda("");
@@ -115,7 +114,7 @@ export default function ModalMaquina({ maquina, onClose }) {
     if (!window.confirm("¿Eliminar mantenimiento?")) return;
 
     try {
-      await apiDelete(`/mantenimiento/${id}`);
+      await api.delete(`/mantenimiento/${id}`);
       await cargarDetalle();
     } catch {
       alert("Error eliminando ❌");
@@ -125,10 +124,9 @@ export default function ModalMaquina({ maquina, onClose }) {
   // 🗑️ eliminar máquina
   const eliminarMaquina = async () => {
     try {
-      await apiDelete(`/maquinas/${maquina.id}`);
+      await api.delete(`/maquinas/${maquina.id}`);
 
       onClose();
-      // 🔥 mejor que reload
       window.location.href = "/dashboard";
 
     } catch {
@@ -250,10 +248,6 @@ export default function ModalMaquina({ maquina, onClose }) {
                 );
               })}
             </div>
-
-            <p className="text-xs text-gray-500 mt-2">
-              Seleccionados: {tecnicosSeleccionados.length}
-            </p>
 
             <button
               onClick={guardar}

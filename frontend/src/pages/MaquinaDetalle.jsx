@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-const API = "https://imopex.onrender.com/api";
+import { api } from "../api"; // 🔥 USAR API CENTRAL
 
 export default function MaquinaDetalle() {
   const { id } = useParams();
@@ -16,19 +15,14 @@ export default function MaquinaDetalle() {
   const [seleccionados, setSeleccionados] = useState([]);
 
   const [loading, setLoading] = useState(true);
-
-  // 🔥 modal eliminar
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // 🔹 cargar máquina
   const cargarMaquina = async () => {
     try {
-      setLoading(true); // 🔥 FIX
-
-      const res = await fetch(`${API}/maquinas/${id}`);
-      const data = await res.json();
+      setLoading(true);
+      const data = await api.get(`/maquinas/${id}`);
       setMaquina(data);
-
     } catch {
       alert("Error cargando máquina ❌");
     } finally {
@@ -39,8 +33,7 @@ export default function MaquinaDetalle() {
   // 🔹 cargar usuarios
   const cargarUsuarios = async () => {
     try {
-      const res = await fetch(`${API}/usuarios`);
-      const data = await res.json();
+      const data = await api.get("/usuarios");
       setUsuarios(data || []);
     } catch {
       alert("Error cargando usuarios ❌");
@@ -54,16 +47,13 @@ export default function MaquinaDetalle() {
 
   // 🔎 filtro técnicos
   useEffect(() => {
-    if (!busqueda) {
-      setFiltrados([]);
-      return;
-    }
+    if (!busqueda) return setFiltrados([]);
 
-    const f = usuarios.filter(u =>
-      u.nombre.toLowerCase().includes(busqueda.toLowerCase())
+    setFiltrados(
+      usuarios.filter(u =>
+        u.nombre.toLowerCase().includes(busqueda.toLowerCase())
+      )
     );
-
-    setFiltrados(f);
   }, [busqueda, usuarios]);
 
   // 🛠️ crear mantenimiento
@@ -76,19 +66,11 @@ export default function MaquinaDetalle() {
     }
 
     try {
-      const res = await fetch(`${API}/mantenimiento`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          descripcion,
-          maquinas_id: id,
-          usuarios_id: seleccionados.map(u => u.id)
-        })
+      await api.post("/mantenimiento", {
+        descripcion,
+        maquinas_id: id,
+        usuarios_id: seleccionados.map(u => u.id)
       });
-
-      if (!res.ok) throw new Error();
 
       await cargarMaquina();
 
@@ -101,17 +83,11 @@ export default function MaquinaDetalle() {
     }
   };
 
-  // 🔥 ELIMINAR MÁQUINA
+  // 🗑️ eliminar máquina
   const eliminarMaquina = async () => {
     try {
-      const res = await fetch(`${API}/maquinas/${id}`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) throw new Error();
-
+      await api.delete(`/maquinas/${id}`);
       navigate("/dashboard");
-
     } catch {
       alert("Error eliminando ❌");
     }
@@ -122,10 +98,9 @@ export default function MaquinaDetalle() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-
       <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
 
-        {/* HEADER 🔥 MEJORADO */}
+        {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
 
           <button
@@ -137,7 +112,7 @@ export default function MaquinaDetalle() {
 
           <button
             onClick={() => setConfirmDelete(true)}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
           >
             🗑️ Eliminar máquina
           </button>
@@ -156,12 +131,9 @@ export default function MaquinaDetalle() {
           <p><strong>Localidad:</strong> {maquina.localidad}</p>
         </div>
 
-        <p className="mb-6 text-gray-600">
-          {maquina.descripcion || "Sin descripción"}
-        </p>
-
         {/* FORM */}
         <form onSubmit={crearMantenimiento} className="mb-6 p-4 border rounded bg-gray-50">
+
           <h2 className="font-semibold mb-3">➕ Agregar mantenimiento</h2>
 
           <input
@@ -200,9 +172,7 @@ export default function MaquinaDetalle() {
               <span
                 key={u.id}
                 onClick={() =>
-                  setSeleccionados(
-                    seleccionados.filter(x => x.id !== u.id)
-                  )
+                  setSeleccionados(seleccionados.filter(x => x.id !== u.id))
                 }
                 className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer hover:bg-red-500"
               >
@@ -214,6 +184,7 @@ export default function MaquinaDetalle() {
           <button className="w-full mt-3 bg-green-500 text-white p-2 rounded hover:bg-green-600">
             Guardar mantenimiento
           </button>
+
         </form>
 
         {/* HISTORIAL */}
@@ -226,7 +197,7 @@ export default function MaquinaDetalle() {
           )}
 
           {maquina.mantenimientos?.map((m) => (
-            <div key={m.id} className="mb-3 p-3 border rounded bg-white shadow-sm">
+            <div key={m.id} className="mb-3 p-3 border rounded bg-white">
 
               <p className="text-xs text-gray-400">
                 📅 {new Date(m.fecha).toLocaleString()}
@@ -242,13 +213,14 @@ export default function MaquinaDetalle() {
           ))}
 
         </div>
+
       </div>
 
-      {/* MODAL ELIMINAR */}
+      {/* MODAL */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
 
-          <div className="bg-white p-6 rounded-xl shadow-xl w-80 text-center">
+          <div className="bg-white p-6 rounded-xl w-80 text-center">
 
             <h2 className="text-lg font-bold mb-3">
               ¿Eliminar máquina?
@@ -275,6 +247,7 @@ export default function MaquinaDetalle() {
             </div>
 
           </div>
+
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiGet, apiPost } from "../api"; // 🔥 CLAVE
+import { api } from "../api";
 
 export default function CrearMaquina() {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ export default function CrearMaquina() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const data = await apiGet("/maquinas");
+        const data = await api.get("/maquinas");
 
         setTipos([...new Set(data.map(m => m.tipo_maquina))]);
         setLocalidades([...new Set(data.map(m => m.localidad))]);
@@ -64,7 +64,7 @@ export default function CrearMaquina() {
     try {
       setLoading(true);
 
-      await apiPost("/maquinas", {
+      await api.post("/maquinas", {
         codigo,
         descripcion,
         serial_maquina: serialMaquina,
@@ -131,7 +131,6 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* TIPO */}
         <select
           value={tipo}
           onChange={(e) => {
@@ -154,7 +153,6 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* ESTADO 🔥 IMPORTANTE */}
         <select
           value={estado}
           onChange={(e) => setEstado(e.target.value)}
@@ -165,7 +163,6 @@ export default function CrearMaquina() {
           <option value="no funcional">No funcional</option>
         </select>
 
-        {/* LOCALIDAD */}
         <select
           value={localidad}
           onChange={(e) => {
