@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://imopex.onrender.com";
+const API = "https://imopex.onrender.com/api";
 
 export default function CrearMaquina() {
   const navigate = useNavigate();

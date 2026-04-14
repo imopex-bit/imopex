@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API = "https://imopex.onrender.com";
+const API = "https://imopex.onrender.com/api";
 
 export default function ModalMaquina({ maquina, onClose }) {
 

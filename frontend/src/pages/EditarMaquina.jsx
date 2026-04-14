@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-const API = "https://imopex.onrender.com";
+const API = "https://imopex.onrender.com/api";
 
 export default function EditarMaquina() {
 

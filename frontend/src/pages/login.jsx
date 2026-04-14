@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://imopex.onrender.com";
+const API = "https://imopex.onrender.com/api";
 
 function Login() {
   const navigate = useNavigate();

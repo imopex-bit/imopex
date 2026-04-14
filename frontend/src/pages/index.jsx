@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 
-const API = "https://imopex.onrender.com";
+const API = "https://imopex.onrender.com/api"; // 🔥 CORREGIDO
 
 export default function Index() {
 

@@ -1,11 +1,14 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
   throw new Error("❌ Faltan variables de entorno");
@@ -16,12 +19,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 🔥 SERVIR FRONTEND (dist)
+app.use(express.static(path.join(__dirname, "dist")));
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-// 🟢 ROOT API
+// 🟢 ROOT
 app.get("/api", (req, res) => {
   res.send("API FUNCIONANDO 🔥");
 });
@@ -92,6 +98,7 @@ app.get("/api/maquinas/:id", async (req, res) => {
 
     const resultado = await Promise.all(
       (mantenimientos || []).map(async (m) => {
+
         const { data: rel } = await supabase
           .from("mantenimiento_usuarios")
           .select("usuarios_id")
@@ -193,7 +200,7 @@ app.post("/api/mantenimiento", async (req, res) => {
       return res.status(400).json({ error: "Sin técnicos" });
     }
 
-    const { data: mant } = await supabase
+    const { data: mant, error } = await supabase
       .from("mantenimiento")
       .insert([{
         descripcion,
@@ -202,6 +209,8 @@ app.post("/api/mantenimiento", async (req, res) => {
       }])
       .select()
       .single();
+
+    if (error) throw error;
 
     const relaciones = usuarios_id.map(uid => ({
       mantenimiento_id: mant.id,
@@ -275,7 +284,7 @@ app.delete("/api/maquinas/:id", async (req, res) => {
 
     if (!data || data.length === 0) {
       return res.status(400).json({
-        error: "No se eliminó (RLS o ID incorrecto)"
+        error: "No se eliminó"
       });
     }
 
@@ -286,22 +295,10 @@ app.delete("/api/maquinas/:id", async (req, res) => {
   }
 });
 
-
-// ===============================
-// 🔥 SERVIR FRONTEND (CLAVE)
-// ===============================
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// servir build
-app.use(express.static(path.join(__dirname, "dist")));
-
-// fallback React Router
-app.get("*", (req, res) => {
+// 🔥 FIX FINAL (React Router)
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
-
 
 // 🚀 SERVER
 const PORT = process.env.PORT || 3000;
