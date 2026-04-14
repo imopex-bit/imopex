@@ -11,9 +11,9 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 
 const app = express();
 
-// 🔐 CORS SOLO TU FRONTEND
+// 🔥 CORS (permite tu frontend y previews de Vercel)
 app.use(cors({
-  origin: "https://imopex.vercel.app"
+  origin: true
 }));
 
 app.use(express.json());
@@ -46,7 +46,7 @@ app.get("/api", (req, res) => {
   res.send("API FUNCIONANDO 🔥");
 });
 
-// 🔐 LOGIN (NO PROTEGIDO)
+// 🔐 LOGIN
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -58,19 +58,24 @@ app.post("/api/login", async (req, res) => {
 
     if (error) throw error;
 
+    if (!data.session) {
+      return res.status(401).json({ error: "No se pudo obtener sesión ❌" });
+    }
+
     const rol = email.toLowerCase().includes("admin") ? "admin" : "tecnico";
 
+    // 🔥 DEVOLVER TOKEN CORRECTO
     res.json({
+      token: data.session.access_token,
       user: {
         id: data.user.id,
         email: data.user.email,
         rol
-      },
-      session: data.session // 🔥 IMPORTANTE (para token)
+      }
     });
 
   } catch {
-    res.status(401).json({ error: "Credenciales incorrectas" });
+    res.status(401).json({ error: "Credenciales incorrectas ❌" });
   }
 });
 
