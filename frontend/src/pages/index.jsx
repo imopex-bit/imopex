@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
+import ModalCrearMaquina from "../components/ModalCrearMaquina";
 
 const API = "https://imopex.onrender.com/api";
 
@@ -17,7 +18,8 @@ export default function Index() {
   const [filtroLocalidad, setFiltroLocalidad] = useState("");
 
   const [seleccionada, setSeleccionada] = useState(null);
-  const [editando, setEditando] = useState(null); // 🔥 NUEVO
+  const [editando, setEditando] = useState(null);
+  const [creando, setCreando] = useState(null); // 🔥 NUEVO
 
   const navigate = useNavigate();
 
@@ -88,9 +90,9 @@ export default function Index() {
           </button>
         </div>
 
-        {/* BOTÓN */}
+        {/* 🔥 BOTÓN CREAR MODAL */}
         <button
-          onClick={() => navigate("/crear")}
+          onClick={() => setCreando(true)}
           className="mb-6 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
         >
           + Añadir máquina
@@ -186,7 +188,6 @@ export default function Index() {
                   <td className="p-3">
                     <div className="flex gap-2 justify-center">
 
-                      {/* 🔥 EDITAR AHORA ABRE MODAL */}
                       <button
                         onClick={() => setEditando(m)}
                         className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs"
@@ -219,12 +220,20 @@ export default function Index() {
           />
         )}
 
-        {/* 🔥 MODAL EDITAR */}
+        {/* MODAL EDITAR */}
         {editando && (
           <ModalEditarMaquina
             maquina={editando}
             onClose={() => setEditando(null)}
             onUpdated={cargar}
+          />
+        )}
+
+        {/* 🔥 MODAL CREAR */}
+        {creando && (
+          <ModalCrearMaquina
+            onClose={() => setCreando(false)}
+            onCreated={cargar}
           />
         )}
 
