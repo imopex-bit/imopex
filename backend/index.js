@@ -14,7 +14,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔗 Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
@@ -54,7 +53,7 @@ app.post("/login", async (req, res) => {
 });
 
 
-// 📦 GET TODAS LAS MÁQUINAS
+// 📦 TODAS LAS MÁQUINAS
 app.get("/maquinas", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -70,21 +69,59 @@ app.get("/maquinas", async (req, res) => {
 });
 
 
-// 🔍 DETALLE DE MÁQUINA
+// 🔥 DETALLE CON HISTORIAL (CLAVE)
 app.get("/maquinas/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { data: maquina, error } = await supabase
+    const { data: maquina } = await supabase
       .from("maquinas")
       .select("*")
       .eq("id", id)
-      .maybeSingle();
+      .single();
 
-    if (error) throw error;
-    if (!maquina) return res.status(404).json({ error: "No existe" });
+    if (!maquina) {
+      return res.status(404).json({ error: "No existe" });
+    }
 
-    res.json(maquina);
+    const { data: mantenimientos } = await supabase
+      .from("mantenimiento")
+      .select("*")
+      .eq("maquinas_id", id)
+      .order("fecha", { ascending: false });
+
+    const resultado = await Promise.all(
+      (mantenimientos || []).map(async (m) => {
+
+        const { data: rel } = await supabase
+          .from("mantenimiento_usuarios")
+          .select("usuarios_id")
+          .eq("mantenimiento_id", m.id);
+
+        const userIds = rel?.map(r => r.usuarios_id) || [];
+
+        let usuarios = [];
+
+        if (userIds.length > 0) {
+          const { data: usersData } = await supabase
+            .from("usuarios")
+            .select("nombre")
+            .in("id", userIds);
+
+          usuarios = usersData?.map(u => u.nombre) || [];
+        }
+
+        return {
+          ...m,
+          usuarios
+        };
+      })
+    );
+
+    res.json({
+      ...maquina,
+      mantenimientos: resultado
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -101,7 +138,6 @@ app.post("/maquinas", async (req, res) => {
   } = req.body;
 
   try {
-    // 🔥 VALIDAR DUPLICADOS
     const { data: existe } = await supabase
       .from("maquinas")
       .select("id")
@@ -130,20 +166,35 @@ app.post("/maquinas", async (req, res) => {
 });
 
 
-// ✏️ EDITAR MÁQUINA
-app.put("/maquinas/:id", async (req, res) => {
-  const { id } = req.params;
+// 🛠️ CREAR MANTENIMIENTO (🔥 FALTABA ESTO)
+app.post("/mantenimiento", async (req, res) => {
+  const { descripcion, maquinas_id, usuarios_id } = req.body;
 
   try {
-    const { data, error } = await supabase
-      .from("maquinas")
-      .update(req.body)
-      .eq("id", id)
-      .select();
+    if (!usuarios_id || usuarios_id.length === 0) {
+      return res.status(400).json({ error: "Sin técnicos" });
+    }
 
-    if (error) throw error;
+    const { data: mant } = await supabase
+      .from("mantenimiento")
+      .insert([{
+        descripcion,
+        maquinas_id,
+        fecha: new Date()
+      }])
+      .select()
+      .single();
 
-    res.json({ message: "Actualizado ✅", data });
+    const relaciones = usuarios_id.map(uid => ({
+      mantenimiento_id: mant.id,
+      usuarios_id: uid
+    }));
+
+    await supabase
+      .from("mantenimiento_usuarios")
+      .insert(relaciones);
+
+    res.json({ message: "Mantenimiento creado ✅" });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -151,36 +202,23 @@ app.put("/maquinas/:id", async (req, res) => {
 });
 
 
-// 🗑️ ELIMINAR MÁQUINA
-app.delete("/maquinas/:id", async (req, res) => {
+// 🗑️ ELIMINAR MANTENIMIENTO
+app.delete("/mantenimiento/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { error } = await supabase
-      .from("maquinas")
+    await supabase
+      .from("mantenimiento_usuarios")
+      .delete()
+      .eq("mantenimiento_id", id);
+
+    await supabase
+      .from("mantenimiento")
       .delete()
       .eq("id", id);
 
-    if (error) throw error;
+    res.json({ message: "Eliminado ✅" });
 
-    res.json({ message: "Eliminado 🗑️" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// 👤 LISTAR USUARIOS
-app.get("/usuarios", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("usuarios")
-      .select("id, nombre");
-
-    if (error) throw error;
-
-    res.json(data || []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
