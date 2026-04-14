@@ -1,0 +1,85 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+const API = "https://imopex.onrender.com";
+
+function Login() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mensaje, setMensaje] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`${API}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.error || "Error en login ❌");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/dashboard");
+
+    } catch {
+      setMensaje("Error de conexión ❌");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
+      
+      <form 
+        onSubmit={handleLogin}
+        className="bg-white p-8 rounded-2xl shadow-xl w-80"
+      >
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          🔐 Iniciar sesión
+        </h2>
+
+        <input
+          type="email"
+          placeholder="Correo"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+
+        <input
+          type="password"
+          placeholder="Contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+
+        <button 
+          type="submit"
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition"
+        >
+          Entrar
+        </button>
+
+        {mensaje && (
+          <p className="text-red-500 mt-4 text-sm text-center">
+            {mensaje}
+          </p>
+        )}
+      </form>
+
+    </div>
+  );
+}
+
+export default Login;
