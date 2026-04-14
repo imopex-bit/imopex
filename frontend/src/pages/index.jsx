@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
+import ModalEditarMaquina from "../components/ModalEditarMaquina";
 
 const API = "https://imopex.onrender.com/api";
 
@@ -16,6 +17,7 @@ export default function Index() {
   const [filtroLocalidad, setFiltroLocalidad] = useState("");
 
   const [seleccionada, setSeleccionada] = useState(null);
+  const [editando, setEditando] = useState(null); // 🔥 NUEVO
 
   const navigate = useNavigate();
 
@@ -26,17 +28,17 @@ export default function Index() {
   }, []);
 
   // 🔹 cargar máquinas
-  useEffect(() => {
-    const cargar = async () => {
-      try {
-        const res = await fetch(`${API}/maquinas`);
-        const data = await res.json();
-        setTodas(data || []);
-      } catch {
-        alert("Error cargando máquinas ❌");
-      }
-    };
+  const cargar = async () => {
+    try {
+      const res = await fetch(`${API}/maquinas`);
+      const data = await res.json();
+      setTodas(data || []);
+    } catch {
+      alert("Error cargando máquinas ❌");
+    }
+  };
 
+  useEffect(() => {
     cargar();
   }, []);
 
@@ -184,8 +186,9 @@ export default function Index() {
                   <td className="p-3">
                     <div className="flex gap-2 justify-center">
 
+                      {/* 🔥 EDITAR AHORA ABRE MODAL */}
                       <button
-                        onClick={() => navigate(`/editar/${m.id}`)}
+                        onClick={() => setEditando(m)}
                         className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs"
                       >
                         Editar
@@ -208,11 +211,20 @@ export default function Index() {
           </table>
         </div>
 
-        {/* MODAL */}
+        {/* MODAL VER */}
         {seleccionada && (
           <ModalMaquina
             maquina={seleccionada}
             onClose={() => setSeleccionada(null)}
+          />
+        )}
+
+        {/* 🔥 MODAL EDITAR */}
+        {editando && (
+          <ModalEditarMaquina
+            maquina={editando}
+            onClose={() => setEditando(null)}
+            onUpdated={cargar}
           />
         )}
 
