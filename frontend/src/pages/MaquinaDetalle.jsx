@@ -15,21 +15,33 @@ export default function MaquinaDetalle() {
   const [filtrados, setFiltrados] = useState([]);
   const [seleccionados, setSeleccionados] = useState([]);
 
-  const [errorDescripcion, setErrorDescripcion] = useState(false);
-  const [errorUsuarios, setErrorUsuarios] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // 🔹 cargar máquina
   const cargarMaquina = async () => {
-    const res = await fetch(`${API}/maquinas/${id}`);
-    const data = await res.json();
-    setMaquina(data);
+    try {
+      const res = await fetch(`${API}/maquinas/${id}`);
+      const data = await res.json();
+
+      console.log("MAQUINA:", data); // 👈 DEBUG
+
+      setMaquina(data);
+    } catch {
+      alert("Error cargando máquina ❌");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 🔹 cargar usuarios
   const cargarUsuarios = async () => {
-    const res = await fetch(`${API}/usuarios`);
-    const data = await res.json();
-    setUsuarios(data);
+    try {
+      const res = await fetch(`${API}/usuarios`);
+      const data = await res.json();
+      setUsuarios(data || []);
+    } catch {
+      alert("Error cargando usuarios ❌");
+    }
   };
 
   useEffect(() => {
@@ -37,7 +49,7 @@ export default function MaquinaDetalle() {
     cargarUsuarios();
   }, [id]);
 
-  // 🔎 filtro búsqueda
+  // 🔎 filtro técnicos
   useEffect(() => {
     if (!busqueda) {
       setFiltrados([]);
@@ -55,19 +67,10 @@ export default function MaquinaDetalle() {
   const crearMantenimiento = async (e) => {
     e.preventDefault();
 
-    let error = false;
-
-    if (!descripcion) {
-      setErrorDescripcion(true);
-      error = true;
+    if (!descripcion || seleccionados.length === 0) {
+      alert("Faltan datos ❌");
+      return;
     }
-
-    if (seleccionados.length === 0) {
-      setErrorUsuarios(true);
-      error = true;
-    }
-
-    if (error) return;
 
     try {
       const res = await fetch(`${API}/mantenimiento`, {
@@ -84,21 +87,22 @@ export default function MaquinaDetalle() {
 
       if (!res.ok) throw new Error();
 
+      // 🔄 recargar historial
+      await cargarMaquina();
+
       // limpiar
       setDescripcion("");
       setSeleccionados([]);
       setBusqueda("");
-      setErrorDescripcion(false);
-      setErrorUsuarios(false);
-
-      cargarMaquina();
 
     } catch {
       alert("Error guardando ❌");
     }
   };
 
-  if (!maquina) return <p className="text-center mt-10">Cargando...</p>;
+  if (loading) return <p className="text-center mt-10">Cargando...</p>;
+
+  if (!maquina) return <p>Error cargando máquina</p>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -118,42 +122,37 @@ export default function MaquinaDetalle() {
           Máquina {maquina.codigo}
         </h1>
 
+        <p className="text-gray-600">
+          <strong>Serial Máquina:</strong> {maquina.serial_maquina || "-"}
+        </p>
+
+        <p className="text-gray-600">
+          <strong>Serial Billetero:</strong> {maquina.serial_billetero || "-"}
+        </p>
+
         <p className="mb-6 text-gray-600">
           {maquina.descripcion || "Sin descripción"}
         </p>
 
-        {/* 🔥 FORM MANTENIMIENTO */}
-        <form
-          onSubmit={crearMantenimiento}
-          className="mb-6 p-4 border rounded-lg bg-gray-50"
-        >
-          <h2 className="font-semibold mb-3">
-            ➕ Agregar mantenimiento
-          </h2>
+        {/* FORM */}
+        <form onSubmit={crearMantenimiento} className="mb-6 p-4 border rounded bg-gray-50">
 
-          {/* DESCRIPCIÓN */}
+          <h2 className="font-semibold mb-3">➕ Agregar mantenimiento</h2>
+
           <input
             type="text"
             placeholder="Descripción"
             value={descripcion}
-            onChange={(e) => {
-              setDescripcion(e.target.value);
-              setErrorDescripcion(false);
-            }}
-            className={`w-full p-2 mb-2 border rounded ${
-              errorDescripcion ? "border-red-500" : ""
-            }`}
+            onChange={(e) => setDescripcion(e.target.value)}
+            className="w-full p-2 mb-2 border rounded"
           />
 
-          {/* BUSCADOR */}
           <input
             type="text"
             placeholder="Buscar técnico..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className={`w-full p-2 mb-2 border rounded ${
-              errorUsuarios ? "border-red-500" : ""
-            }`}
+            className="w-full p-2 mb-2 border rounded"
           />
 
           {/* RESULTADOS */}
@@ -165,7 +164,6 @@ export default function MaquinaDetalle() {
                   setSeleccionados([...seleccionados, u]);
                 }
                 setBusqueda("");
-                setErrorUsuarios(false);
               }}
               className="cursor-pointer hover:bg-gray-200 p-1"
             >
@@ -183,40 +181,41 @@ export default function MaquinaDetalle() {
                     seleccionados.filter(x => x.id !== u.id)
                   )
                 }
-                className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer hover:bg-red-500"
+                className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer"
               >
                 {u.nombre} ✖
               </span>
             ))}
           </div>
 
-          <button className="w-full mt-3 bg-green-500 text-white p-2 rounded hover:bg-green-600">
+          <button className="w-full mt-3 bg-green-500 text-white p-2 rounded">
             Guardar mantenimiento
           </button>
+
         </form>
 
-        {/* 🔥 HISTORIAL CON SCROLL */}
-        <h2 className="text-xl font-semibold mb-3">
-          🛠️ Historial
-        </h2>
+        {/* HISTORIAL */}
+        <h2 className="text-xl font-semibold mb-3">🛠️ Historial</h2>
 
         <div className="max-h-64 overflow-y-auto border rounded p-3 bg-gray-50">
 
-          {maquina.mantenimientos?.length === 0 && (
+          {(!maquina.mantenimientos || maquina.mantenimientos.length === 0) && (
             <p>No hay mantenimientos</p>
           )}
 
-          {maquina.mantenimientos?.map((m, i) => (
-            <div key={i} className="mb-3 p-3 border rounded bg-white">
+          {maquina.mantenimientos?.map((m) => (
+            <div key={m.id} className="mb-3 p-3 border rounded bg-white">
+
               <p className="text-xs text-gray-400">
-                📅 {new Date(m.fecha).toLocaleDateString()}
+                📅 {new Date(m.fecha).toLocaleString()}
               </p>
 
               <p className="font-semibold">{m.descripcion}</p>
 
               <p className="text-sm text-gray-500">
-                👤 {m.usuarios?.join(", ")}
+                👤 {m.usuarios?.join(", ") || "Sin técnicos"}
               </p>
+
             </div>
           ))}
 

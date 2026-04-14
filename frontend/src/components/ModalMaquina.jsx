@@ -10,42 +10,58 @@ export default function ModalMaquina({ maquina, onClose }) {
   const [descripcion, setDescripcion] = useState("");
   const [tecnicosSeleccionados, setTecnicosSeleccionados] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+
   // 🔹 cargar detalle máquina
   const cargarDetalle = async () => {
-    const res = await fetch(`${API}/maquinas/${maquina.id}`);
-    const data = await res.json();
-    setDetalle(data);
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API}/maquinas/${maquina.id}`);
+      const data = await res.json();
+
+      setDetalle(data);
+
+    } catch {
+      alert("Error cargando detalle ❌");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    cargarDetalle();
+    if (maquina?.id) {
+      cargarDetalle();
+    }
   }, [maquina]);
 
   // 🔹 cargar usuarios
   useEffect(() => {
     const cargarUsuarios = async () => {
-      const res = await fetch(`${API}/usuarios`);
-      const data = await res.json();
-      setUsuarios(data || []);
+      try {
+        const res = await fetch(`${API}/usuarios`);
+        const data = await res.json();
+        setUsuarios(data || []);
+      } catch {
+        alert("Error cargando usuarios ❌");
+      }
     };
 
     cargarUsuarios();
   }, []);
 
-  // 🔥 manejar checkbox (MULTIPLE REAL)
+  // 🔥 manejar checkbox
   const toggleTecnico = (id) => {
-    setTecnicosSeleccionados(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(t => t !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
+    setTecnicosSeleccionados(prev =>
+      prev.includes(id)
+        ? prev.filter(t => t !== id)
+        : [...prev, id]
+    );
   };
 
   // 🔥 guardar mantenimiento
   const guardar = async () => {
-    if (!descripcion) {
+    if (!descripcion.trim()) {
       alert("Escribe descripción ❌");
       return;
     }
@@ -70,15 +86,13 @@ export default function ModalMaquina({ maquina, onClose }) {
 
       if (!res.ok) throw new Error();
 
-      alert("Guardado ✅");
-
       setDescripcion("");
       setTecnicosSeleccionados([]);
 
-      cargarDetalle();
+      await cargarDetalle();
 
     } catch {
-      alert("Error ❌");
+      alert("Error guardando ❌");
     }
   };
 
@@ -86,17 +100,22 @@ export default function ModalMaquina({ maquina, onClose }) {
   const eliminar = async (id) => {
     if (!window.confirm("¿Eliminar mantenimiento?")) return;
 
-    await fetch(`${API}/mantenimiento/${id}`, {
-      method: "DELETE"
-    });
+    try {
+      await fetch(`${API}/mantenimiento/${id}`, {
+        method: "DELETE"
+      });
 
-    cargarDetalle();
+      cargarDetalle();
+
+    } catch {
+      alert("Error eliminando ❌");
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
+      <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl animate-fadeIn">
 
         {/* HEADER */}
         <div className="flex justify-between mb-4">
@@ -104,89 +123,110 @@ export default function ModalMaquina({ maquina, onClose }) {
             Máquina {maquina.codigo}
           </h2>
 
-          <button onClick={onClose} className="text-red-500">
+          <button onClick={onClose} className="text-red-500 text-lg">
             ✖
           </button>
         </div>
 
-        {/* DESCRIPCIÓN */}
-        <p className="text-gray-600 mb-4">
-          {detalle?.descripcion}
-        </p>
+        {/* INFO */}
+        {loading ? (
+          <p className="text-center text-gray-500">Cargando...</p>
+        ) : (
+          <>
+            <p className="text-gray-600 mb-4">
+              {detalle?.descripcion || "Sin descripción"}
+            </p>
 
-        {/* HISTORIAL */}
-        <div className="max-h-40 overflow-y-auto mb-4">
-          <h3 className="font-semibold mb-2">Historial</h3>
+            {/* 🔥 HISTORIAL */}
+            <div className="max-h-52 overflow-y-auto mb-4 border rounded p-2 bg-gray-50">
 
-          {detalle?.mantenimientos?.map(m => (
-            <div key={m.id} className="border p-2 rounded mb-2 text-sm">
+              <h3 className="font-semibold mb-2">Historial</h3>
 
-              <p className="text-gray-400 text-xs">
-                📅 {new Date(m.fecha).toLocaleDateString()}
-              </p>
+              {(!detalle?.mantenimientos || detalle.mantenimientos.length === 0) && (
+                <p className="text-sm text-gray-500">
+                  No hay mantenimientos
+                </p>
+              )}
 
-              <p>🛠 {m.descripcion}</p>
+              {detalle?.mantenimientos?.map(m => (
+                <div key={m.id} className="border p-2 rounded mb-2 text-sm bg-white">
 
-              <div className="flex gap-2 flex-wrap mt-1">
-                {m.usuarios?.map((u, i) => (
-                  <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
-                    👤 {u}
-                  </span>
-                ))}
-              </div>
+                  <p className="text-gray-400 text-xs">
+                    📅 {new Date(m.fecha).toLocaleDateString()}
+                  </p>
 
-              <button
-                onClick={() => eliminar(m.id)}
-                className="text-red-500 text-xs mt-1"
-              >
-                Eliminar
-              </button>
+                  <p className="font-medium">🛠 {m.descripcion}</p>
+
+                  <div className="flex gap-2 flex-wrap mt-1">
+                    {m.usuarios?.length > 0 ? (
+                      m.usuarios.map((u, i) => (
+                        <span
+                          key={i}
+                          className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
+                        >
+                          👤 {u}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-400">
+                        Sin técnicos
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => eliminar(m.id)}
+                    className="text-red-500 text-xs mt-1 hover:underline"
+                  >
+                    Eliminar
+                  </button>
+
+                </div>
+              ))}
+            </div>
+
+            {/* INPUT DESCRIPCIÓN */}
+            <textarea
+              placeholder="Descripción mantenimiento..."
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className="w-full border p-2 rounded mb-3"
+            />
+
+            {/* TÉCNICOS */}
+            <div className="border rounded p-3 max-h-40 overflow-y-auto">
+
+              <h3 className="font-semibold mb-2">Seleccionar técnicos</h3>
+
+              {usuarios.map(u => (
+                <label
+                  key={u.id}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    checked={tecnicosSeleccionados.includes(u.id)}
+                    onChange={() => toggleTecnico(u.id)}
+                  />
+                  {u.nombre}
+                </label>
+              ))}
 
             </div>
-          ))}
-        </div>
 
-        {/* INPUT DESCRIPCIÓN */}
-        <textarea
-          placeholder="Descripción mantenimiento..."
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          className="w-full border p-2 rounded mb-3"
-        />
+            <p className="text-xs text-gray-500 mt-2">
+              Seleccionados: {tecnicosSeleccionados.length}
+            </p>
 
-        {/* 🔥 LISTA DE TÉCNICOS (CHECKBOX) */}
-        <div className="border rounded p-3 max-h-40 overflow-y-auto">
-
-          <h3 className="font-semibold mb-2">Seleccionar técnicos</h3>
-
-          {usuarios.map(u => (
-            <label
-              key={u.id}
-              className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+            {/* BOTÓN */}
+            <button
+              onClick={guardar}
+              className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded"
             >
-              <input
-                type="checkbox"
-                checked={tecnicosSeleccionados.includes(u.id)}
-                onChange={() => toggleTecnico(u.id)}
-              />
-              {u.nombre}
-            </label>
-          ))}
-
-        </div>
-
-        {/* CONTADOR */}
-        <p className="text-xs text-gray-500 mt-2">
-          Seleccionados: {tecnicosSeleccionados.length}
-        </p>
-
-        {/* BOTÓN */}
-        <button
-          onClick={guardar}
-          className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded"
-        >
-          Guardar mantenimiento
-        </button>
+              Guardar mantenimiento
+            </button>
+          </>
+        )}
 
       </div>
     </div>
