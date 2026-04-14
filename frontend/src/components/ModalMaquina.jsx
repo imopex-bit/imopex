@@ -15,10 +15,17 @@ export default function ModalMaquina({ maquina, onClose }) {
 
   const [loading, setLoading] = useState(true);
 
-  // 🔥 NUEVO
+  // 🔥 eliminar máquina
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // 🔹 cargar detalle máquina
+  // 🔥 editar máquina
+  const [estado, setEstado] = useState("");
+  const [localidades, setLocalidades] = useState([]);
+  const [localidad, setLocalidad] = useState("");
+  const [nuevaLocalidad, setNuevaLocalidad] = useState("");
+  const [usarNueva, setUsarNueva] = useState(false);
+
+  // 🔹 cargar detalle
   const cargarDetalle = async () => {
     try {
       setLoading(true);
@@ -27,6 +34,8 @@ export default function ModalMaquina({ maquina, onClose }) {
       const data = await res.json();
 
       setDetalle(data);
+      setEstado(data.estado);
+      setLocalidad(data.localidad);
 
     } catch {
       alert("Error cargando detalle ❌");
@@ -39,29 +48,30 @@ export default function ModalMaquina({ maquina, onClose }) {
     if (maquina?.id) {
       cargarDetalle();
     }
-  }, [maquina]);
 
-  // 🔹 cargar usuarios
-  useEffect(() => {
+    // 🔹 usuarios
     const cargarUsuarios = async () => {
-      try {
-        const res = await fetch(`${API}/usuarios`);
-        const data = await res.json();
-        setUsuarios(data || []);
-      } catch {
-        alert("Error cargando usuarios ❌");
-      }
+      const res = await fetch(`${API}/usuarios`);
+      const data = await res.json();
+      setUsuarios(data || []);
+    };
+
+    // 🔹 localidades existentes
+    const cargarLocalidades = async () => {
+      const res = await fetch(`${API}/maquinas`);
+      const data = await res.json();
+      const unicas = [...new Set(data.map(m => m.localidad))];
+      setLocalidades(unicas);
     };
 
     cargarUsuarios();
-  }, []);
+    cargarLocalidades();
+
+  }, [maquina]);
 
   // 🔎 filtro técnicos
   useEffect(() => {
-    if (!busqueda) {
-      setFiltrados([]);
-      return;
-    }
+    if (!busqueda) return setFiltrados([]);
 
     const f = usuarios.filter(u =>
       u.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -72,22 +82,13 @@ export default function ModalMaquina({ maquina, onClose }) {
 
   // 🛠️ guardar mantenimiento
   const guardar = async () => {
-    if (!descripcion.trim()) {
-      alert("Escribe descripción ❌");
-      return;
-    }
-
-    if (tecnicosSeleccionados.length === 0) {
-      alert("Selecciona técnicos ❌");
-      return;
-    }
+    if (!descripcion.trim()) return alert("Escribe descripción ❌");
+    if (tecnicosSeleccionados.length === 0) return alert("Selecciona técnicos ❌");
 
     try {
-      const res = await fetch(`${API}/mantenimiento`, {
+      await fetch(`${API}/mantenimiento`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           descripcion,
           maquinas_id: maquina.id,
@@ -95,16 +96,40 @@ export default function ModalMaquina({ maquina, onClose }) {
         })
       });
 
-      if (!res.ok) throw new Error();
-
       setDescripcion("");
       setTecnicosSeleccionados([]);
       setBusqueda("");
 
-      await cargarDetalle();
+      cargarDetalle();
 
     } catch {
       alert("Error guardando ❌");
+    }
+  };
+
+  // 🔥 guardar edición máquina
+  const guardarEdicion = async () => {
+
+    const finalLocalidad = usarNueva ? nuevaLocalidad : localidad;
+
+    if (!estado) return alert("Selecciona estado ❌");
+    if (!finalLocalidad) return alert("Selecciona ubicación ❌");
+
+    try {
+      await fetch(`${API}/maquinas/${maquina.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          estado,
+          localidad: finalLocalidad
+        })
+      });
+
+      alert("Actualizado ✅");
+      cargarDetalle();
+
+    } catch {
+      alert("Error actualizando ❌");
     }
   };
 
@@ -112,19 +137,14 @@ export default function ModalMaquina({ maquina, onClose }) {
   const eliminar = async (id) => {
     if (!window.confirm("¿Eliminar mantenimiento?")) return;
 
-    try {
-      await fetch(`${API}/mantenimiento/${id}`, {
-        method: "DELETE"
-      });
+    await fetch(`${API}/mantenimiento/${id}`, {
+      method: "DELETE"
+    });
 
-      cargarDetalle();
-
-    } catch {
-      alert("Error eliminando ❌");
-    }
+    cargarDetalle();
   };
 
-  // 🔥 ELIMINAR MÁQUINA
+  // 🗑️ eliminar máquina
   const eliminarMaquina = async () => {
     try {
       const res = await fetch(`${API}/maquinas/${maquina.id}`, {
@@ -144,9 +164,9 @@ export default function ModalMaquina({ maquina, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
+      <div className="bg-white w-full max-w-2xl p-6 rounded-xl shadow-xl overflow-y-auto max-h-[90vh]">
 
-        {/* 🔥 HEADER CORREGIDO */}
+        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             Máquina {maquina.codigo}
@@ -166,52 +186,88 @@ export default function ModalMaquina({ maquina, onClose }) {
           </div>
         </div>
 
-        {/* INFO */}
         {loading ? (
-          <p className="text-center text-gray-500">Cargando...</p>
+          <p className="text-center">Cargando...</p>
         ) : (
           <>
-            <p className="text-gray-600 mb-4">
-              {detalle?.descripcion || "Sin descripción"}
-            </p>
+            {/* 🔥 EDICIÓN */}
+            <div className="border p-4 rounded mb-4 bg-gray-50">
+              <h3 className="font-semibold mb-2">Editar máquina</h3>
+
+              <select
+                value={estado}
+                onChange={(e) => setEstado(e.target.value)}
+                className="w-full border p-2 rounded mb-2"
+              >
+                <option value="">Estado</option>
+                <option value="funcional">Funcional</option>
+                <option value="no funcional">No funcional</option>
+              </select>
+
+              <select
+                value={localidad}
+                onChange={(e) => {
+                  if (e.target.value === "nueva") {
+                    setUsarNueva(true);
+                    setLocalidad("");
+                  } else {
+                    setUsarNueva(false);
+                    setLocalidad(e.target.value);
+                  }
+                }}
+                className="w-full border p-2 rounded mb-2"
+              >
+                <option value="">Ubicación</option>
+
+                {localidades.map((l, i) => (
+                  <option key={i}>{l}</option>
+                ))}
+
+                <option value="nueva">➕ Nueva ubicación</option>
+              </select>
+
+              {usarNueva && (
+                <input
+                  type="text"
+                  placeholder="Nueva ubicación..."
+                  value={nuevaLocalidad}
+                  onChange={(e) => setNuevaLocalidad(e.target.value)}
+                  className="w-full border p-2 rounded mb-2"
+                />
+              )}
+
+              <button
+                onClick={guardarEdicion}
+                className="w-full bg-blue-500 text-white p-2 rounded"
+              >
+                Guardar cambios
+              </button>
+            </div>
 
             {/* HISTORIAL */}
             <div className="max-h-52 overflow-y-auto mb-4 border rounded p-2 bg-gray-50">
-
               <h3 className="font-semibold mb-2">Historial</h3>
 
-              {(!detalle?.mantenimientos || detalle.mantenimientos.length === 0) && (
-                <p className="text-sm text-gray-500">
-                  No hay mantenimientos
-                </p>
+              {detalle?.mantenimientos?.length === 0 && (
+                <p>No hay mantenimientos</p>
               )}
 
               {detalle?.mantenimientos?.map(m => (
-                <div key={m.id} className="border p-2 rounded mb-2 text-sm bg-white">
+                <div key={m.id} className="border p-2 rounded mb-2 bg-white">
 
-                  <p className="text-gray-400 text-xs">
+                  <p className="text-xs text-gray-400">
                     📅 {new Date(m.fecha).toLocaleDateString()}
                   </p>
 
-                  <p className="font-medium">🛠 {m.descripcion}</p>
+                  <p className="font-medium">{m.descripcion}</p>
 
-                  <div className="flex gap-2 flex-wrap mt-1">
-                    {m.usuarios?.length > 0 ? (
-                      m.usuarios.map((u, i) => (
-                        <span key={i} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
-                          👤 {u}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400">
-                        Sin técnicos
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-xs">
+                    👤 {m.usuarios?.join(", ") || "Sin técnicos"}
+                  </p>
 
                   <button
                     onClick={() => eliminar(m.id)}
-                    className="text-red-500 text-xs mt-1 hover:underline"
+                    className="text-red-500 text-xs mt-1"
                   >
                     Eliminar
                   </button>
@@ -220,15 +276,14 @@ export default function ModalMaquina({ maquina, onClose }) {
               ))}
             </div>
 
-            {/* INPUT */}
+            {/* MANTENIMIENTO */}
             <textarea
               placeholder="Descripción mantenimiento..."
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              className="w-full border p-2 rounded mb-3"
+              className="w-full border p-2 rounded mb-2"
             />
 
-            {/* BUSCAR */}
             <input
               type="text"
               placeholder="Buscar técnico..."
@@ -252,33 +307,9 @@ export default function ModalMaquina({ maquina, onClose }) {
               </div>
             ))}
 
-            <div className="flex gap-2 flex-wrap mt-2">
-              {tecnicosSeleccionados.map(id => {
-                const user = usuarios.find(u => u.id === id);
-
-                return (
-                  <span
-                    key={id}
-                    onClick={() =>
-                      setTecnicosSeleccionados(
-                        tecnicosSeleccionados.filter(t => t !== id)
-                      )
-                    }
-                    className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer hover:bg-red-500"
-                  >
-                    {user?.nombre} ✖
-                  </span>
-                );
-              })}
-            </div>
-
-            <p className="text-xs text-gray-500 mt-2">
-              Seleccionados: {tecnicosSeleccionados.length}
-            </p>
-
             <button
               onClick={guardar}
-              className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded"
+              className="w-full mt-3 bg-green-500 text-white p-2 rounded"
             >
               Guardar mantenimiento
             </button>
@@ -286,7 +317,7 @@ export default function ModalMaquina({ maquina, onClose }) {
         )}
       </div>
 
-      {/* 🔥 MODAL CONFIRMAR ELIMINAR */}
+      {/* CONFIRMAR ELIMINAR */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
 
@@ -317,7 +348,6 @@ export default function ModalMaquina({ maquina, onClose }) {
             </div>
 
           </div>
-
         </div>
       )}
     </div>
