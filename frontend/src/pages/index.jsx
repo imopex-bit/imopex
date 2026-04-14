@@ -103,7 +103,7 @@ export default function Index() {
             onClick={() => navigate("/crear")}
             className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg"
           >
-            + Crear máquina
+            + Nueva Máquina
           </button>
 
           <input

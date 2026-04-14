@@ -9,6 +9,10 @@ export default function CrearMaquina() {
   const [codigo, setCodigo] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
+  // 🔥 NUEVOS
+  const [serialMaquina, setSerialMaquina] = useState("");
+  const [serialBilletero, setSerialBilletero] = useState("");
+
   const [tipo, setTipo] = useState("");
   const [nuevoTipo, setNuevoTipo] = useState("");
 
@@ -45,6 +49,8 @@ export default function CrearMaquina() {
     let nuevosErrores = {};
 
     if (!codigo) nuevosErrores.codigo = true;
+    if (!serialMaquina) nuevosErrores.serialMaquina = true;
+    if (!serialBilletero) nuevosErrores.serialBilletero = true;
     if (!tipoFinal) nuevosErrores.tipo = true;
     if (!estado) nuevosErrores.estado = true;
     if (!localidadFinal) nuevosErrores.localidad = true;
@@ -62,13 +68,19 @@ export default function CrearMaquina() {
         body: JSON.stringify({
           codigo,
           descripcion,
+          serial_maquina: serialMaquina,
+          serial_billetero: serialBilletero,
           tipo_maquina: tipoFinal,
           estado,
           localidad: localidadFinal
         })
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const error = await res.json();
+        alert(error.error || "Error guardando ❌");
+        return;
+      }
 
       navigate("/dashboard");
 
@@ -95,7 +107,7 @@ export default function CrearMaquina() {
         </button>
 
         <h2 className="text-2xl font-bold mb-4">
-          ➕ Crear máquina
+          ➕ Añadir máquina
         </h2>
 
         {/* CÓDIGO */}
@@ -111,6 +123,32 @@ export default function CrearMaquina() {
           }`}
         />
 
+        {/* 🔥 SERIAL MÁQUINA */}
+        <input
+          placeholder="Serial Máquina"
+          value={serialMaquina}
+          onChange={(e) => {
+            setSerialMaquina(e.target.value);
+            setErrores({ ...errores, serialMaquina: false });
+          }}
+          className={`w-full p-2 mb-3 border rounded ${
+            errores.serialMaquina ? "border-red-500" : ""
+          }`}
+        />
+
+        {/* 🔥 SERIAL BILLETERO */}
+        <input
+          placeholder="Serial Billetero"
+          value={serialBilletero}
+          onChange={(e) => {
+            setSerialBilletero(e.target.value);
+            setErrores({ ...errores, serialBilletero: false });
+          }}
+          className={`w-full p-2 mb-3 border rounded ${
+            errores.serialBilletero ? "border-red-500" : ""
+          }`}
+        />
+
         {/* DESCRIPCIÓN */}
         <textarea
           placeholder="Descripción"
@@ -119,7 +157,7 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* 🔥 TIPO */}
+        {/* TIPO */}
         <select
           value={tipo}
           onChange={(e) => {
@@ -160,11 +198,12 @@ export default function CrearMaquina() {
           }`}
         >
           <option value="">Estado</option>
-          <option value="funcional">Funcional</option>
-          <option value="no funcional">No funcional</option>
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+          <option value="Mantenimiento">Mantenimiento</option>
         </select>
 
-        {/* 🔥 LOCALIDAD */}
+        {/* LOCALIDAD */}
         <select
           value={localidad}
           onChange={(e) => {
