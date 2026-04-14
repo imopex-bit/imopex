@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
-import { api } from "../api";
+import api from "../api"; // ✅ CORREGIDO
 
 export default function Index() {
 
@@ -31,10 +31,8 @@ export default function Index() {
   // 🔹 cargar máquinas
   const cargar = async () => {
     try {
-      const data = await api.get("/maquinas"); // 🔥 YA ES JSON
-
-      setTodas(data || []);
-
+      const res = await api.get("/maquinas");
+      setTodas(res.data || []);
     } catch (err) {
       console.log(err);
       alert("Error cargando máquinas ❌");
@@ -73,6 +71,22 @@ export default function Index() {
   const estados = ["funcional", "no funcional"];
   const localidades = [...new Set(todas.map(m => m.localidad))].filter(Boolean);
 
+  // 🔥 DASHBOARD
+  const total = todas.length;
+
+  const contar = (campo) => {
+    const conteo = {};
+    todas.forEach((m) => {
+      const key = m[campo] || "sin dato";
+      conteo[key] = (conteo[key] || 0) + 1;
+    });
+    return conteo;
+  };
+
+  const porTipo = contar("tipo_maquina");
+  const porEstado = contar("estado");
+  const porLocalidad = contar("localidad");
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6">
 
@@ -99,6 +113,37 @@ export default function Index() {
         >
           + Añadir máquina
         </button>
+
+        {/* 🔥 DASHBOARD */}
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
+
+          <div className="bg-blue-500 text-white p-4 rounded-xl shadow">
+            <p className="text-sm">Total</p>
+            <h2 className="text-3xl font-bold">{total}</h2>
+          </div>
+
+          <div className="bg-purple-500 text-white p-4 rounded-xl shadow">
+            <p className="text-sm mb-2">Tipos</p>
+            {Object.entries(porTipo).map(([k, v]) => (
+              <p key={k}>{k}: {v}</p>
+            ))}
+          </div>
+
+          <div className="bg-green-500 text-white p-4 rounded-xl shadow">
+            <p className="text-sm mb-2">Estado</p>
+            {Object.entries(porEstado).map(([k, v]) => (
+              <p key={k}>{k}: {v}</p>
+            ))}
+          </div>
+
+          <div className="bg-orange-500 text-white p-4 rounded-xl shadow">
+            <p className="text-sm mb-2">Localidad</p>
+            {Object.entries(porLocalidad).map(([k, v]) => (
+              <p key={k}>{k}: {v}</p>
+            ))}
+          </div>
+
+        </div>
 
         {/* BUSCADOR */}
         <input
