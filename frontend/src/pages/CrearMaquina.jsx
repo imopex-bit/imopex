@@ -9,7 +9,6 @@ export default function CrearMaquina() {
   const [codigo, setCodigo] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
-  // 🔥 NUEVOS
   const [serialMaquina, setSerialMaquina] = useState("");
   const [serialBilletero, setSerialBilletero] = useState("");
 
@@ -25,6 +24,7 @@ export default function CrearMaquina() {
   const [localidades, setLocalidades] = useState([]);
 
   const [errores, setErrores] = useState({});
+  const [loading, setLoading] = useState(false); // 🔥 UX PRO
 
   // 🔹 cargar datos existentes
   useEffect(() => {
@@ -60,6 +60,8 @@ export default function CrearMaquina() {
     if (Object.keys(nuevosErrores).length > 0) return;
 
     try {
+      setLoading(true);
+
       const res = await fetch(`${API}/maquinas`, {
         method: "POST",
         headers: {
@@ -76,9 +78,10 @@ export default function CrearMaquina() {
         })
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const error = await res.json();
-        alert(error.error || "Error guardando ❌");
+        alert(data.error || "Error guardando ❌");
         return;
       }
 
@@ -86,27 +89,29 @@ export default function CrearMaquina() {
 
     } catch {
       alert("Error guardando ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
 
       <form
         onSubmit={guardar}
-        className="bg-white p-6 rounded-xl shadow w-full max-w-md"
+        className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md"
       >
 
-        {/* 🔙 VOLVER */}
+        {/* VOLVER */}
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-blue-500 mb-3"
+          className="text-blue-500 mb-3 hover:underline"
         >
           ← Volver
         </button>
 
-        <h2 className="text-2xl font-bold mb-4">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
           ➕ Añadir máquina
         </h2>
 
@@ -123,7 +128,7 @@ export default function CrearMaquina() {
           }`}
         />
 
-        {/* 🔥 SERIAL MÁQUINA */}
+        {/* SERIAL MÁQUINA */}
         <input
           placeholder="Serial Máquina"
           value={serialMaquina}
@@ -136,7 +141,7 @@ export default function CrearMaquina() {
           }`}
         />
 
-        {/* 🔥 SERIAL BILLETERO */}
+        {/* SERIAL BILLETERO */}
         <input
           placeholder="Serial Billetero"
           value={serialBilletero}
@@ -186,7 +191,7 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* ESTADO */}
+        {/* 🔥 ESTADO CORREGIDO */}
         <select
           value={estado}
           onChange={(e) => {
@@ -198,9 +203,8 @@ export default function CrearMaquina() {
           }`}
         >
           <option value="">Estado</option>
-          <option value="Activo">Activo</option>
-          <option value="Inactivo">Inactivo</option>
-          <option value="Mantenimiento">Mantenimiento</option>
+          <option value="Funcional">Funcional</option>
+          <option value="No funcional">No funcional</option>
         </select>
 
         {/* LOCALIDAD */}
@@ -233,12 +237,15 @@ export default function CrearMaquina() {
         />
 
         {/* BOTÓN */}
-        <button className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">
-          Guardar
+        <button
+          disabled={loading}
+          className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 disabled:bg-gray-400"
+        >
+          {loading ? "Guardando..." : "Guardar"}
         </button>
 
       </form>
 
     </div>
-  );  
+  );
 }
