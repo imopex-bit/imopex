@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API = "https://imopex.onrender.com/api";
+import { apiGet, apiPut } from "../api";
 
 export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
@@ -17,13 +16,12 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   useEffect(() => {
     if (!maquina) return;
 
-    setEstado(maquina.estado);
-    setLocalidad(maquina.localidad);
+    setEstado(maquina.estado || "");
+    setLocalidad(maquina.localidad || "");
 
     const cargarLocalidades = async () => {
       try {
-        const res = await fetch(`${API}/maquinas`);
-        const data = await res.json();
+        const data = await apiGet("/maquinas");
 
         const unicas = [...new Set(data.map(m => m.localidad))];
         setLocalidades(unicas);
@@ -48,28 +46,22 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
     if (!finalLocalidad) return alert("Selecciona ubicación ❌");
 
     try {
-      const res = await fetch(`${API}/maquinas/${maquina.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          estado,
-          localidad: finalLocalidad
-        })
+      await apiPut(`/maquinas/${maquina.id}`, {
+        estado,
+        localidad: finalLocalidad
       });
-
-      if (!res.ok) throw new Error();
 
       alert("Actualizado ✅");
 
-      onUpdated(); // 🔥 refresca tabla
+      onUpdated(); // refresca dashboard
       onClose();
 
     } catch {
       alert("Error actualizando ❌");
     }
   };
+
+  if (!maquina) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -108,7 +100,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
             <label className="block mb-1 font-semibold">Ubicación</label>
 
             <select
-              value={localidad}
+              value={usarNueva ? "nueva" : localidad}
               onChange={(e) => {
                 if (e.target.value === "nueva") {
                   setUsarNueva(true);
@@ -123,7 +115,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               <option value="">Seleccionar ubicación</option>
 
               {localidades.map((l, i) => (
-                <option key={i}>{l}</option>
+                <option key={i} value={l}>{l}</option>
               ))}
 
               <option value="nueva">➕ Nueva ubicación</option>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-const API = "https://imopex.onrender.com/api";
+import { api } from "../api"; // 🔥 IMPORTANTE
 
 export default function EditarMaquina() {
 
@@ -16,21 +15,29 @@ export default function EditarMaquina() {
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
   const [usarNueva, setUsarNueva] = useState(false);
 
-  // 🔥 ERRORES
   const [errorEstado, setErrorEstado] = useState(false);
   const [errorLocalidad, setErrorLocalidad] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
       try {
-        const res = await fetch(`${API}/maquinas/${id}`);
+        // 🔥 DETALLE MAQUINA
+        const res = await api.get(`/maquinas/${id}`);
+
+        if (res.status === 401) {
+          localStorage.clear();
+          navigate("/");
+          return;
+        }
+
         const data = await res.json();
 
         setMaquina(data);
         setEstado(data.estado || "");
         setLocalidad(data.localidad || "");
 
-        const res2 = await fetch(`${API}/maquinas`);
+        // 🔥 TODAS PARA LOCALIDADES
+        const res2 = await api.get("/maquinas");
         const data2 = await res2.json();
 
         const unicas = [...new Set(data2.map(m => m.localidad))];
@@ -67,21 +74,12 @@ export default function EditarMaquina() {
     if (hayError) return;
 
     try {
-      const res = await fetch(`${API}/maquinas/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          estado,
-          localidad: finalLocalidad
-        })
+      const res = await api.put(`/maquinas/${id}`, {
+        estado,
+        localidad: finalLocalidad
       });
 
-      // 🔥 CLAVE: validar respuesta
-      if (!res.ok) {
-        throw new Error();
-      }
+      if (!res.ok) throw new Error();
 
       alert("Máquina actualizada ✅");
 

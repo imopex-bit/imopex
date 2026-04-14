@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API = "https://imopex.onrender.com/api";
+import { apiGet, apiPost } from "../api";
 
 export default function ModalCrearMaquina({ onClose, onCreated }) {
 
@@ -20,17 +19,22 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
   const [usarNuevaLocalidad, setUsarNuevaLocalidad] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+
   // 🔹 cargar datos existentes
   useEffect(() => {
     const cargar = async () => {
-      const res = await fetch(`${API}/maquinas`);
-      const data = await res.json();
+      try {
+        const data = await apiGet("/maquinas");
 
-      const tiposUnicos = [...new Set(data.map(m => m.tipo_maquina))];
-      const locUnicas = [...new Set(data.map(m => m.localidad))];
+        const tiposUnicos = [...new Set(data.map(m => m.tipo_maquina))];
+        const locUnicas = [...new Set(data.map(m => m.localidad))];
 
-      setTipos(tiposUnicos);
-      setLocalidades(locUnicas);
+        setTipos(tiposUnicos);
+        setLocalidades(locUnicas);
+      } catch {
+        alert("Error cargando datos ❌");
+      }
     };
 
     cargar();
@@ -39,42 +43,48 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   // 🔥 guardar
   const guardar = async () => {
 
-    const tipoFinal = usarNuevoTipo ? nuevoTipo : tipo;
-    const localidadFinal = usarNuevaLocalidad ? nuevaLocalidad : localidad;
+    const tipoFinal = usarNuevoTipo ? nuevoTipo.trim() : tipo;
+    const localidadFinal = usarNuevaLocalidad ? nuevaLocalidad.trim() : localidad;
 
-    if (!codigo || !serialMaquina || !serialBilletero) {
-      alert("Completa todos los campos ❌");
-      return;
+    if (!codigo.trim() || !serialMaquina.trim() || !serialBilletero.trim()) {
+      return alert("Completa todos los campos ❌");
     }
 
     if (!tipoFinal || !estado || !localidadFinal) {
-      alert("Faltan datos ❌");
-      return;
+      return alert("Faltan datos ❌");
     }
 
     try {
-      const res = await fetch(`${API}/maquinas`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          codigo,
-          serial_maquina: serialMaquina,
-          serial_billetero: serialBilletero,
-          tipo_maquina: tipoFinal,
-          estado,
-          localidad: localidadFinal
-        })
+      setLoading(true);
+
+      await apiPost("/maquinas", {
+        codigo: codigo.trim(),
+        serial_maquina: serialMaquina.trim(),
+        serial_billetero: serialBilletero.trim(),
+        tipo_maquina: tipoFinal,
+        estado,
+        localidad: localidadFinal
       });
 
-      if (!res.ok) throw new Error();
+      // 🔥 limpiar form
+      setCodigo("");
+      setSerialMaquina("");
+      setSerialBilletero("");
+      setEstado("");
+      setTipo("");
+      setNuevoTipo("");
+      setLocalidad("");
+      setNuevaLocalidad("");
+      setUsarNuevaLocalidad(false);
+      setUsarNuevoTipo(false);
 
-      onCreated(); // 🔥 recarga tabla
+      onCreated(); // recargar tabla
       onClose();
 
     } catch {
       alert("Error creando máquina ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,7 +105,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
         </div>
 
         {/* FORM */}
-
         <input
           placeholder="Código"
           value={codigo}
@@ -135,7 +144,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           <option value="">Seleccionar tipo</option>
 
           {tipos.map((t, i) => (
-            <option key={i}>{t}</option>
+            <option key={i} value={t}>{t}</option>
           ))}
 
           <option value="nuevo">➕ Nuevo tipo</option>
@@ -165,7 +174,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
         {/* LOCALIDAD */}
         <label className="text-sm">Ubicación</label>
         <select
-          value={localidad}
+          value={usarNuevaLocalidad ? "nueva" : localidad}
           onChange={(e) => {
             if (e.target.value === "nueva") {
               setUsarNuevaLocalidad(true);
@@ -180,7 +189,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           <option value="">Seleccionar ubicación</option>
 
           {localidades.map((l, i) => (
-            <option key={i}>{l}</option>
+            <option key={i} value={l}>{l}</option>
           ))}
 
           <option value="nueva">➕ Nueva ubicación</option>
@@ -198,9 +207,10 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
         {/* BOTÓN */}
         <button
           onClick={guardar}
-          className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded"
+          disabled={loading}
+          className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded disabled:bg-gray-400"
         >
-          Crear máquina
+          {loading ? "Creando..." : "Crear máquina"}
         </button>
 
       </div>

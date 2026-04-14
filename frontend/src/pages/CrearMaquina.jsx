@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API = "https://imopex.onrender.com/api";
+import { apiGet, apiPost } from "../api"; // 🔥 CLAVE
 
 export default function CrearMaquina() {
   const navigate = useNavigate();
@@ -24,16 +23,20 @@ export default function CrearMaquina() {
   const [localidades, setLocalidades] = useState([]);
 
   const [errores, setErrores] = useState({});
-  const [loading, setLoading] = useState(false); // 🔥 UX PRO
+  const [loading, setLoading] = useState(false);
 
-  // 🔹 cargar datos existentes
+  // 🔹 cargar datos
   useEffect(() => {
     const cargar = async () => {
-      const res = await fetch(`${API}/maquinas`);
-      const data = await res.json();
+      try {
+        const data = await apiGet("/maquinas");
 
-      setTipos([...new Set(data.map(m => m.tipo_maquina))]);
-      setLocalidades([...new Set(data.map(m => m.localidad))]);
+        setTipos([...new Set(data.map(m => m.tipo_maquina))]);
+        setLocalidades([...new Set(data.map(m => m.localidad))]);
+
+      } catch {
+        alert("Error cargando datos ❌");
+      }
     };
 
     cargar();
@@ -56,34 +59,20 @@ export default function CrearMaquina() {
     if (!localidadFinal) nuevosErrores.localidad = true;
 
     setErrores(nuevosErrores);
-
     if (Object.keys(nuevosErrores).length > 0) return;
 
     try {
       setLoading(true);
 
-      const res = await fetch(`${API}/maquinas`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          codigo,
-          descripcion,
-          serial_maquina: serialMaquina,
-          serial_billetero: serialBilletero,
-          tipo_maquina: tipoFinal,
-          estado,
-          localidad: localidadFinal
-        })
+      await apiPost("/maquinas", {
+        codigo,
+        descripcion,
+        serial_maquina: serialMaquina,
+        serial_billetero: serialBilletero,
+        tipo_maquina: tipoFinal,
+        estado,
+        localidad: localidadFinal
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Error guardando ❌");
-        return;
-      }
 
       navigate("/dashboard");
 
@@ -102,7 +91,6 @@ export default function CrearMaquina() {
         className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md"
       >
 
-        {/* VOLVER */}
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -115,46 +103,27 @@ export default function CrearMaquina() {
           ➕ Añadir máquina
         </h2>
 
-        {/* CÓDIGO */}
         <input
           placeholder="Código"
           value={codigo}
-          onChange={(e) => {
-            setCodigo(e.target.value);
-            setErrores({ ...errores, codigo: false });
-          }}
-          className={`w-full p-2 mb-3 border rounded ${
-            errores.codigo ? "border-red-500" : ""
-          }`}
+          onChange={(e) => setCodigo(e.target.value)}
+          className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* SERIAL MÁQUINA */}
         <input
           placeholder="Serial Máquina"
           value={serialMaquina}
-          onChange={(e) => {
-            setSerialMaquina(e.target.value);
-            setErrores({ ...errores, serialMaquina: false });
-          }}
-          className={`w-full p-2 mb-3 border rounded ${
-            errores.serialMaquina ? "border-red-500" : ""
-          }`}
+          onChange={(e) => setSerialMaquina(e.target.value)}
+          className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* SERIAL BILLETERO */}
         <input
           placeholder="Serial Billetero"
           value={serialBilletero}
-          onChange={(e) => {
-            setSerialBilletero(e.target.value);
-            setErrores({ ...errores, serialBilletero: false });
-          }}
-          className={`w-full p-2 mb-3 border rounded ${
-            errores.serialBilletero ? "border-red-500" : ""
-          }`}
+          onChange={(e) => setSerialBilletero(e.target.value)}
+          className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* DESCRIPCIÓN */}
         <textarea
           placeholder="Descripción"
           value={descripcion}
@@ -168,43 +137,32 @@ export default function CrearMaquina() {
           onChange={(e) => {
             setTipo(e.target.value);
             setNuevoTipo("");
-            setErrores({ ...errores, tipo: false });
           }}
-          className={`w-full p-2 mb-2 border rounded ${
-            errores.tipo ? "border-red-500" : ""
-          }`}
+          className="w-full p-2 mb-2 border rounded"
         >
           <option value="">Seleccionar tipo</option>
-          {tipos.map((t, i) => (
-            <option key={i}>{t}</option>
-          ))}
+          {tipos.map((t, i) => <option key={i}>{t}</option>)}
         </select>
 
         <input
-          placeholder="O escribir nuevo tipo..."
+          placeholder="Nuevo tipo..."
           value={nuevoTipo}
           onChange={(e) => {
             setNuevoTipo(e.target.value);
             setTipo("");
-            setErrores({ ...errores, tipo: false });
           }}
           className="w-full p-2 mb-3 border rounded"
         />
 
-        {/* 🔥 ESTADO CORREGIDO */}
+        {/* ESTADO 🔥 IMPORTANTE */}
         <select
           value={estado}
-          onChange={(e) => {
-            setEstado(e.target.value);
-            setErrores({ ...errores, estado: false });
-          }}
-          className={`w-full p-2 mb-3 border rounded ${
-            errores.estado ? "border-red-500" : ""
-          }`}
+          onChange={(e) => setEstado(e.target.value)}
+          className="w-full p-2 mb-3 border rounded"
         >
           <option value="">Estado</option>
-          <option value="Funcional">Funcional</option>
-          <option value="No funcional">No funcional</option>
+          <option value="funcional">Funcional</option>
+          <option value="no funcional">No funcional</option>
         </select>
 
         {/* LOCALIDAD */}
@@ -213,39 +171,31 @@ export default function CrearMaquina() {
           onChange={(e) => {
             setLocalidad(e.target.value);
             setNuevaLocalidad("");
-            setErrores({ ...errores, localidad: false });
           }}
-          className={`w-full p-2 mb-2 border rounded ${
-            errores.localidad ? "border-red-500" : ""
-          }`}
+          className="w-full p-2 mb-2 border rounded"
         >
           <option value="">Seleccionar localidad</option>
-          {localidades.map((l, i) => (
-            <option key={i}>{l}</option>
-          ))}
+          {localidades.map((l, i) => <option key={i}>{l}</option>)}
         </select>
 
         <input
-          placeholder="O escribir nueva localidad..."
+          placeholder="Nueva localidad..."
           value={nuevaLocalidad}
           onChange={(e) => {
             setNuevaLocalidad(e.target.value);
             setLocalidad("");
-            setErrores({ ...errores, localidad: false });
           }}
           className="w-full p-2 mb-4 border rounded"
         />
 
-        {/* BOTÓN */}
         <button
           disabled={loading}
-          className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 disabled:bg-gray-400"
+          className="w-full bg-green-500 text-white p-2 rounded"
         >
           {loading ? "Guardando..." : "Guardar"}
         </button>
 
       </form>
-
     </div>
   );
 }

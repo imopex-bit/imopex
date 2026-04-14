@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
-import { apiGet } from "../api"; // 🔥 IMPORTANTE
+import { api } from "../api"; // 🔥 USAMOS api COMPLETO
 
 export default function Index() {
 
@@ -22,18 +22,29 @@ export default function Index() {
 
   const navigate = useNavigate();
 
-  // 🔐 proteger ruta
+  // 🔐 proteger ruta BIEN
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) navigate("/");
+    const token = localStorage.getItem("token");
+    if (!token) navigate("/");
   }, []);
 
-  // 🔹 cargar máquinas (USANDO api.js)
+  // 🔹 cargar máquinas
   const cargar = async () => {
     try {
-      const data = await apiGet("/maquinas");
+      const res = await api.get("/maquinas");
+
+      if (res.status === 401) {
+        localStorage.clear();
+        navigate("/");
+        return;
+      }
+
+      const data = await res.json();
+
       setTodas(data || []);
-    } catch {
+
+    } catch (err) {
+      console.log(err);
       alert("Error cargando máquinas ❌");
     }
   };
@@ -61,7 +72,7 @@ export default function Index() {
 
   // 🔐 logout
   const logout = () => {
-    localStorage.clear(); // 🔥 ahora limpia token también
+    localStorage.clear();
     navigate("/");
   };
 
@@ -212,7 +223,6 @@ export default function Index() {
         </div>
 
         {/* MODALES */}
-
         {seleccionada && (
           <ModalMaquina
             maquina={seleccionada}

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API = "https://imopex.onrender.com/api";
+import { apiGet, apiPost, apiDelete } from "../api";
 
 export default function ModalMaquina({ maquina, onClose }) {
 
@@ -18,14 +17,12 @@ export default function ModalMaquina({ maquina, onClose }) {
 
   // 🔹 cargar detalle máquina
   const cargarDetalle = async () => {
+    if (!maquina?.id) return;
+
     try {
       setLoading(true);
-
-      const res = await fetch(`${API}/maquinas/${maquina.id}`);
-      const data = await res.json();
-
+      const data = await apiGet(`/maquinas/${maquina.id}`);
       setDetalle(data);
-
     } catch {
       alert("Error cargando detalle ❌");
     } finally {
@@ -34,17 +31,14 @@ export default function ModalMaquina({ maquina, onClose }) {
   };
 
   useEffect(() => {
-    if (maquina?.id) {
-      cargarDetalle();
-    }
+    cargarDetalle();
   }, [maquina]);
 
   // 🔹 cargar usuarios
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const res = await fetch(`${API}/usuarios`);
-        const data = await res.json();
+        const data = await apiGet("/usuarios");
         setUsuarios(data || []);
       } catch {
         alert("Error cargando usuarios ❌");
@@ -68,17 +62,17 @@ export default function ModalMaquina({ maquina, onClose }) {
     setFiltrados(f);
   }, [busqueda, usuarios]);
 
-  // 🔥 SELECCIONAR TECNICO (ARREGLADO)
+  // 🔥 seleccionar técnico
   const seleccionarTecnico = (id) => {
     setTecnicosSeleccionados(prev => {
-      if (prev.includes(id)) return prev; // no duplicar
+      if (prev.includes(id)) return prev;
       return [...prev, id];
     });
 
     setBusqueda("");
   };
 
-  // 🔥 QUITAR TECNICO
+  // 🔥 quitar técnico
   const quitarTecnico = (id) => {
     setTecnicosSeleccionados(prev =>
       prev.filter(t => t !== id)
@@ -98,20 +92,13 @@ export default function ModalMaquina({ maquina, onClose }) {
     }
 
     try {
-      const res = await fetch(`${API}/mantenimiento`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          descripcion,
-          maquinas_id: maquina.id,
-          usuarios_id: tecnicosSeleccionados
-        })
+      await apiPost("/mantenimiento", {
+        descripcion,
+        maquinas_id: maquina.id,
+        usuarios_id: tecnicosSeleccionados
       });
 
-      if (!res.ok) throw new Error();
-
+      // limpiar
       setDescripcion("");
       setTecnicosSeleccionados([]);
       setBusqueda("");
@@ -128,12 +115,8 @@ export default function ModalMaquina({ maquina, onClose }) {
     if (!window.confirm("¿Eliminar mantenimiento?")) return;
 
     try {
-      await fetch(`${API}/mantenimiento/${id}`, {
-        method: "DELETE"
-      });
-
-      cargarDetalle();
-
+      await apiDelete(`/mantenimiento/${id}`);
+      await cargarDetalle();
     } catch {
       alert("Error eliminando ❌");
     }
@@ -142,19 +125,18 @@ export default function ModalMaquina({ maquina, onClose }) {
   // 🗑️ eliminar máquina
   const eliminarMaquina = async () => {
     try {
-      const res = await fetch(`${API}/maquinas/${maquina.id}`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) throw new Error();
+      await apiDelete(`/maquinas/${maquina.id}`);
 
       onClose();
-      window.location.reload();
+      // 🔥 mejor que reload
+      window.location.href = "/dashboard";
 
     } catch {
       alert("Error eliminando ❌");
     }
   };
+
+  if (!maquina) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -190,7 +172,7 @@ export default function ModalMaquina({ maquina, onClose }) {
 
               <h3 className="font-semibold mb-2">Historial</h3>
 
-              {(!detalle?.mantenimientos || detalle.mantenimientos.length === 0) && (
+              {!detalle?.mantenimientos?.length && (
                 <p className="text-sm text-gray-500">
                   No hay mantenimientos
                 </p>
