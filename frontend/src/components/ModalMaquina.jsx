@@ -14,11 +14,9 @@ export default function ModalMaquina({ maquina, onClose }) {
   const [filtrados, setFiltrados] = useState([]);
 
   const [loading, setLoading] = useState(true);
-
-  // 🔥 eliminar máquina
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // 🔹 cargar detalle
+  // 🔹 cargar detalle máquina
   const cargarDetalle = async () => {
     try {
       setLoading(true);
@@ -39,20 +37,29 @@ export default function ModalMaquina({ maquina, onClose }) {
     if (maquina?.id) {
       cargarDetalle();
     }
+  }, [maquina]);
 
+  // 🔹 cargar usuarios
+  useEffect(() => {
     const cargarUsuarios = async () => {
-      const res = await fetch(`${API}/usuarios`);
-      const data = await res.json();
-      setUsuarios(data || []);
+      try {
+        const res = await fetch(`${API}/usuarios`);
+        const data = await res.json();
+        setUsuarios(data || []);
+      } catch {
+        alert("Error cargando usuarios ❌");
+      }
     };
 
     cargarUsuarios();
-
-  }, [maquina]);
+  }, []);
 
   // 🔎 filtro técnicos
   useEffect(() => {
-    if (!busqueda) return setFiltrados([]);
+    if (!busqueda) {
+      setFiltrados([]);
+      return;
+    }
 
     const f = usuarios.filter(u =>
       u.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -61,15 +68,41 @@ export default function ModalMaquina({ maquina, onClose }) {
     setFiltrados(f);
   }, [busqueda, usuarios]);
 
+  // 🔥 SELECCIONAR TECNICO (ARREGLADO)
+  const seleccionarTecnico = (id) => {
+    setTecnicosSeleccionados(prev => {
+      if (prev.includes(id)) return prev; // no duplicar
+      return [...prev, id];
+    });
+
+    setBusqueda("");
+  };
+
+  // 🔥 QUITAR TECNICO
+  const quitarTecnico = (id) => {
+    setTecnicosSeleccionados(prev =>
+      prev.filter(t => t !== id)
+    );
+  };
+
   // 🛠️ guardar mantenimiento
   const guardar = async () => {
-    if (!descripcion.trim()) return alert("Escribe descripción ❌");
-    if (tecnicosSeleccionados.length === 0) return alert("Selecciona técnicos ❌");
+    if (!descripcion.trim()) {
+      alert("Escribe descripción ❌");
+      return;
+    }
+
+    if (tecnicosSeleccionados.length === 0) {
+      alert("Selecciona técnicos ❌");
+      return;
+    }
 
     try {
-      await fetch(`${API}/mantenimiento`, {
+      const res = await fetch(`${API}/mantenimiento`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           descripcion,
           maquinas_id: maquina.id,
@@ -77,11 +110,13 @@ export default function ModalMaquina({ maquina, onClose }) {
         })
       });
 
+      if (!res.ok) throw new Error();
+
       setDescripcion("");
       setTecnicosSeleccionados([]);
       setBusqueda("");
 
-      cargarDetalle();
+      await cargarDetalle();
 
     } catch {
       alert("Error guardando ❌");
@@ -92,11 +127,16 @@ export default function ModalMaquina({ maquina, onClose }) {
   const eliminar = async (id) => {
     if (!window.confirm("¿Eliminar mantenimiento?")) return;
 
-    await fetch(`${API}/mantenimiento/${id}`, {
-      method: "DELETE"
-    });
+    try {
+      await fetch(`${API}/mantenimiento/${id}`, {
+        method: "DELETE"
+      });
 
-    cargarDetalle();
+      cargarDetalle();
+
+    } catch {
+      alert("Error eliminando ❌");
+    }
   };
 
   // 🗑️ eliminar máquina
@@ -141,15 +181,10 @@ export default function ModalMaquina({ maquina, onClose }) {
           </div>
         </div>
 
-        {/* INFO */}
         {loading ? (
           <p className="text-center text-gray-500">Cargando...</p>
         ) : (
           <>
-            <p className="text-gray-600 mb-4">
-              {detalle?.descripcion || "Sin descripción"}
-            </p>
-
             {/* HISTORIAL */}
             <div className="max-h-52 overflow-y-auto mb-4 border rounded p-2 bg-gray-50">
 
@@ -171,17 +206,11 @@ export default function ModalMaquina({ maquina, onClose }) {
                   <p className="font-medium">🛠 {m.descripcion}</p>
 
                   <div className="flex gap-2 flex-wrap mt-1">
-                    {m.usuarios?.length > 0 ? (
-                      m.usuarios.map((u, i) => (
-                        <span key={i} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
-                          👤 {u}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400">
-                        Sin técnicos
+                    {m.usuarios?.map((u, i) => (
+                      <span key={i} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
+                        👤 {u}
                       </span>
-                    )}
+                    ))}
                   </div>
 
                   <button
@@ -195,7 +224,7 @@ export default function ModalMaquina({ maquina, onClose }) {
               ))}
             </div>
 
-            {/* MANTENIMIENTO */}
+            {/* INPUT */}
             <textarea
               placeholder="Descripción mantenimiento..."
               value={descripcion}
@@ -203,6 +232,7 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-3"
             />
 
+            {/* BUSCAR */}
             <input
               type="text"
               placeholder="Buscar técnico..."
@@ -211,20 +241,37 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-2"
             />
 
+            {/* RESULTADOS */}
             {filtrados.map(u => (
               <div
                 key={u.id}
-                onClick={() => {
-                  if (!tecnicosSeleccionados.includes(u.id)) {
-                    setTecnicosSeleccionados([...tecnicosSeleccionados, u.id]);
-                  }
-                  setBusqueda("");
-                }}
+                onClick={() => seleccionarTecnico(u.id)}
                 className="cursor-pointer hover:bg-gray-100 p-2 rounded"
               >
                 {u.nombre}
               </div>
             ))}
+
+            {/* SELECCIONADOS */}
+            <div className="flex gap-2 flex-wrap mt-2">
+              {tecnicosSeleccionados.map(id => {
+                const user = usuarios.find(u => u.id === id);
+
+                return (
+                  <span
+                    key={id}
+                    onClick={() => quitarTecnico(id)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer hover:bg-red-500"
+                  >
+                    {user?.nombre} ✖
+                  </span>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-gray-500 mt-2">
+              Seleccionados: {tecnicosSeleccionados.length}
+            </p>
 
             <button
               onClick={guardar}
@@ -236,7 +283,7 @@ export default function ModalMaquina({ maquina, onClose }) {
         )}
       </div>
 
-      {/* MODAL CONFIRMAR ELIMINAR */}
+      {/* CONFIRM DELETE */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
 
@@ -267,6 +314,7 @@ export default function ModalMaquina({ maquina, onClose }) {
             </div>
 
           </div>
+
         </div>
       )}
     </div>
