@@ -10,6 +10,9 @@ export default function ModalMaquina({ maquina, onClose }) {
   const [descripcion, setDescripcion] = useState("");
   const [tecnicosSeleccionados, setTecnicosSeleccionados] = useState([]);
 
+  const [busqueda, setBusqueda] = useState("");
+  const [filtrados, setFiltrados] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   // 🔹 cargar detalle máquina
@@ -50,14 +53,19 @@ export default function ModalMaquina({ maquina, onClose }) {
     cargarUsuarios();
   }, []);
 
-  // 🔥 manejar checkbox
-  const toggleTecnico = (id) => {
-    setTecnicosSeleccionados(prev =>
-      prev.includes(id)
-        ? prev.filter(t => t !== id)
-        : [...prev, id]
+  // 🔎 filtro técnicos (🔥 PRO)
+  useEffect(() => {
+    if (!busqueda) {
+      setFiltrados([]);
+      return;
+    }
+
+    const f = usuarios.filter(u =>
+      u.nombre.toLowerCase().includes(busqueda.toLowerCase())
     );
-  };
+
+    setFiltrados(f);
+  }, [busqueda, usuarios]);
 
   // 🔥 guardar mantenimiento
   const guardar = async () => {
@@ -88,6 +96,7 @@ export default function ModalMaquina({ maquina, onClose }) {
 
       setDescripcion("");
       setTecnicosSeleccionados([]);
+      setBusqueda("");
 
       await cargarDetalle();
 
@@ -115,7 +124,7 @@ export default function ModalMaquina({ maquina, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl animate-fadeIn">
+      <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
 
         {/* HEADER */}
         <div className="flex justify-between mb-4">
@@ -193,25 +202,50 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-3"
             />
 
-            {/* TÉCNICOS */}
-            <div className="border rounded p-3 max-h-40 overflow-y-auto">
+            {/* 🔥 BUSCAR TÉCNICOS */}
+            <input
+              type="text"
+              placeholder="Buscar técnico..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full border p-2 rounded mb-2"
+            />
 
-              <h3 className="font-semibold mb-2">Seleccionar técnicos</h3>
+            {/* RESULTADOS */}
+            {filtrados.map(u => (
+              <div
+                key={u.id}
+                onClick={() => {
+                  if (!tecnicosSeleccionados.includes(u.id)) {
+                    setTecnicosSeleccionados([...tecnicosSeleccionados, u.id]);
+                  }
+                  setBusqueda("");
+                }}
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded"
+              >
+                {u.nombre}
+              </div>
+            ))}
 
-              {usuarios.map(u => (
-                <label
-                  key={u.id}
-                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                >
-                  <input
-                    type="checkbox"
-                    checked={tecnicosSeleccionados.includes(u.id)}
-                    onChange={() => toggleTecnico(u.id)}
-                  />
-                  {u.nombre}
-                </label>
-              ))}
+            {/* SELECCIONADOS */}
+            <div className="flex gap-2 flex-wrap mt-2">
+              {tecnicosSeleccionados.map(id => {
+                const user = usuarios.find(u => u.id === id);
 
+                return (
+                  <span
+                    key={id}
+                    onClick={() =>
+                      setTecnicosSeleccionados(
+                        tecnicosSeleccionados.filter(t => t !== id)
+                      )
+                    }
+                    className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer hover:bg-red-500"
+                  >
+                    {user?.nombre} ✖
+                  </span>
+                );
+              })}
             </div>
 
             <p className="text-xs text-gray-500 mt-2">
