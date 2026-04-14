@@ -17,14 +17,14 @@ export default function MaquinaDetalle() {
 
   const [loading, setLoading] = useState(true);
 
+  // 🔥 modal eliminar
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   // 🔹 cargar máquina
   const cargarMaquina = async () => {
     try {
       const res = await fetch(`${API}/maquinas/${id}`);
       const data = await res.json();
-
-      console.log("MAQUINA:", data); // 👈 DEBUG
-
       setMaquina(data);
     } catch {
       alert("Error cargando máquina ❌");
@@ -87,10 +87,8 @@ export default function MaquinaDetalle() {
 
       if (!res.ok) throw new Error();
 
-      // 🔄 recargar historial
       await cargarMaquina();
 
-      // limpiar
       setDescripcion("");
       setSeleccionados([]);
       setBusqueda("");
@@ -100,8 +98,23 @@ export default function MaquinaDetalle() {
     }
   };
 
-  if (loading) return <p className="text-center mt-10">Cargando...</p>;
+  // 🔥 ELIMINAR MÁQUINA
+  const eliminarMaquina = async () => {
+    try {
+      const res = await fetch(`${API}/maquinas/${id}`, {
+        method: "DELETE"
+      });
 
+      if (!res.ok) throw new Error();
+
+      navigate("/dashboard");
+
+    } catch {
+      alert("Error eliminando ❌");
+    }
+  };
+
+  if (loading) return <p className="text-center mt-10">Cargando...</p>;
   if (!maquina) return <p>Error cargando máquina</p>;
 
   return (
@@ -109,26 +122,34 @@ export default function MaquinaDetalle() {
 
       <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
 
-        {/* VOLVER */}
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="mb-4 text-blue-500"
-        >
-          ← Volver
-        </button>
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="text-blue-500"
+          >
+            ← Volver
+          </button>
+
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+          >
+            Eliminar máquina
+          </button>
+        </div>
 
         {/* INFO */}
         <h1 className="text-2xl font-bold mb-2">
           Máquina {maquina.codigo}
         </h1>
 
-        <p className="text-gray-600">
-          <strong>Serial Máquina:</strong> {maquina.serial_maquina || "-"}
-        </p>
-
-        <p className="text-gray-600">
-          <strong>Serial Billetero:</strong> {maquina.serial_billetero || "-"}
-        </p>
+        <div className="bg-gray-50 p-4 rounded mb-4">
+          <p><strong>Serial Máquina:</strong> {maquina.serial_maquina || "-"}</p>
+          <p><strong>Serial Billetero:</strong> {maquina.serial_billetero || "-"}</p>
+          <p><strong>Estado:</strong> {maquina.estado}</p>
+          <p><strong>Localidad:</strong> {maquina.localidad}</p>
+        </div>
 
         <p className="mb-6 text-gray-600">
           {maquina.descripcion || "Sin descripción"}
@@ -136,7 +157,6 @@ export default function MaquinaDetalle() {
 
         {/* FORM */}
         <form onSubmit={crearMantenimiento} className="mb-6 p-4 border rounded bg-gray-50">
-
           <h2 className="font-semibold mb-3">➕ Agregar mantenimiento</h2>
 
           <input
@@ -155,7 +175,6 @@ export default function MaquinaDetalle() {
             className="w-full p-2 mb-2 border rounded"
           />
 
-          {/* RESULTADOS */}
           {filtrados.map(u => (
             <div
               key={u.id}
@@ -165,13 +184,12 @@ export default function MaquinaDetalle() {
                 }
                 setBusqueda("");
               }}
-              className="cursor-pointer hover:bg-gray-200 p-1"
+              className="cursor-pointer hover:bg-gray-200 p-1 rounded"
             >
               {u.nombre}
             </div>
           ))}
 
-          {/* SELECCIONADOS */}
           <div className="flex gap-2 flex-wrap mt-2">
             {seleccionados.map(u => (
               <span
@@ -181,17 +199,16 @@ export default function MaquinaDetalle() {
                     seleccionados.filter(x => x.id !== u.id)
                   )
                 }
-                className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer"
+                className="bg-blue-500 text-white px-3 py-1 rounded-full cursor-pointer hover:bg-red-500"
               >
                 {u.nombre} ✖
               </span>
             ))}
           </div>
 
-          <button className="w-full mt-3 bg-green-500 text-white p-2 rounded">
+          <button className="w-full mt-3 bg-green-500 text-white p-2 rounded hover:bg-green-600">
             Guardar mantenimiento
           </button>
-
         </form>
 
         {/* HISTORIAL */}
@@ -204,7 +221,7 @@ export default function MaquinaDetalle() {
           )}
 
           {maquina.mantenimientos?.map((m) => (
-            <div key={m.id} className="mb-3 p-3 border rounded bg-white">
+            <div key={m.id} className="mb-3 p-3 border rounded bg-white shadow-sm">
 
               <p className="text-xs text-gray-400">
                 📅 {new Date(m.fecha).toLocaleString()}
@@ -220,8 +237,42 @@ export default function MaquinaDetalle() {
           ))}
 
         </div>
-
       </div>
+
+      {/* 🔥 MODAL CONFIRMAR ELIMINAR */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+
+          <div className="bg-white p-6 rounded-xl shadow-xl w-80 text-center">
+
+            <h2 className="text-lg font-bold mb-3">
+              ¿Eliminar máquina?
+            </h2>
+
+            <p className="text-gray-600 mb-4">
+              Esta acción no se puede deshacer
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="w-full bg-gray-300 p-2 rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={eliminarMaquina}
+                className="w-full bg-red-500 text-white p-2 rounded"
+              >
+                Eliminar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

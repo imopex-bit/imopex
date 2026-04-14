@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ModalMaquina from "../components/ModalMaquina";
 
 const API = "https://imopex.onrender.com";
 
@@ -14,13 +15,17 @@ export default function Index() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroLocalidad, setFiltroLocalidad] = useState("");
 
+  const [seleccionada, setSeleccionada] = useState(null);
+
   const navigate = useNavigate();
 
+  // 🔐 proteger ruta
   useEffect(() => {
     const user = localStorage.getItem("user");
     if (!user) navigate("/");
   }, []);
 
+  // 🔹 cargar máquinas
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -35,8 +40,8 @@ export default function Index() {
     cargar();
   }, []);
 
+  // 🔥 filtros
   useEffect(() => {
-
     let filtradas = [...todas];
 
     if (busqueda) {
@@ -50,31 +55,16 @@ export default function Index() {
     if (filtroLocalidad) filtradas = filtradas.filter(m => m.localidad === filtroLocalidad);
 
     setMaquinas(filtradas);
-
   }, [todas, busqueda, filtroTipo, filtroEstado, filtroLocalidad]);
 
-  const eliminar = async (id) => {
-    if (!window.confirm("¿Eliminar máquina?")) return;
-
-    try {
-      await fetch(`${API}/maquinas/${id}`, {
-        method: "DELETE"
-      });
-
-      setTodas(prev => prev.filter(m => m.id !== id));
-
-    } catch {
-      alert("Error ❌");
-    }
-  };
-
+  // 🔐 logout
   const logout = () => {
     localStorage.removeItem("user");
     navigate("/");
   };
 
   const tipos = [...new Set(todas.map(m => m.tipo_maquina))];
-  const estados = [...new Set(todas.map(m => m.estado))];
+  const estados = ["funcional", "no funcional"];
   const localidades = [...new Set(todas.map(m => m.localidad))];
 
   return (
@@ -96,24 +86,21 @@ export default function Index() {
           </button>
         </div>
 
-        {/* ACCIONES */}
-        <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-6">
+        {/* BOTÓN */}
+        <button
+          onClick={() => navigate("/crear")}
+          className="mb-6 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
+        >
+          + Añadir máquina
+        </button>
 
-          <button
-            onClick={() => navigate("/crear")}
-            className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg"
-          >
-            + Nueva Máquina
-          </button>
-
-          <input
-            placeholder="🔍 Buscar código..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full md:w-64 p-2 border rounded-lg"
-          />
-
-        </div>
+        {/* BUSCADOR */}
+        <input
+          placeholder="Buscar por código..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full p-3 border rounded-lg mb-4 shadow-sm"
+        />
 
         {/* FILTROS */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -164,21 +151,16 @@ export default function Index() {
 
             <tbody>
               {maquinas.map((m, i) => (
-                <tr key={m.id} className="border-b hover:bg-gray-50">
+                <tr key={m.id} className="border-b hover:bg-gray-100 transition">
 
-                  <td className="p-3">{i + 1}</td>
+                  <td className="p-3 text-gray-500">{i + 1}</td>
 
-                  <td className="p-3 font-medium text-gray-800">
+                  <td className="p-3 font-semibold text-gray-800">
                     {m.codigo}
                   </td>
 
-                  <td className="p-3 text-gray-600">
-                    {m.serial_maquina || "-"}
-                  </td>
-
-                  <td className="p-3 text-gray-600">
-                    {m.serial_billetero || "-"}
-                  </td>
+                  <td className="p-3">{m.serial_maquina || "-"}</td>
+                  <td className="p-3">{m.serial_billetero || "-"}</td>
 
                   <td className="p-3">
                     <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
@@ -188,9 +170,8 @@ export default function Index() {
 
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                      ${m.estado === "Activo" ? "bg-green-100 text-green-700" : ""}
-                      ${m.estado === "Inactivo" ? "bg-red-100 text-red-700" : ""}
-                      ${m.estado === "Mantenimiento" ? "bg-yellow-100 text-yellow-700" : ""}
+                      ${m.estado === "funcional" ? "bg-green-100 text-green-700" : ""}
+                      ${m.estado === "no funcional" ? "bg-red-100 text-red-700" : ""}
                     `}>
                       {m.estado}
                     </span>
@@ -211,14 +192,7 @@ export default function Index() {
                       </button>
 
                       <button
-                        onClick={() => eliminar(m.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs"
-                      >
-                        Eliminar
-                      </button>
-
-                      <button
-                        onClick={() => navigate(`/maquina/${m.id}`)}
+                        onClick={() => setSeleccionada(m)}
                         className="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded-lg text-xs"
                       >
                         Ver
@@ -233,6 +207,14 @@ export default function Index() {
 
           </table>
         </div>
+
+        {/* MODAL */}
+        {seleccionada && (
+          <ModalMaquina
+            maquina={seleccionada}
+            onClose={() => setSeleccionada(null)}
+          />
+        )}
 
       </div>
     </div>
