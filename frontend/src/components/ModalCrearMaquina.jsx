@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api";
+import api from "../api";
 
 export default function ModalCrearMaquina({ onClose, onCreated }) {
 
@@ -19,16 +19,19 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
   const [usarNuevaLocalidad, setUsarNuevaLocalidad] = useState(false);
 
+  // ✅ NUEVO ESTADO
+  const [descripcion, setDescripcion] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   // 🔹 cargar datos existentes
   useEffect(() => {
     const cargar = async () => {
       try {
-        const data = await api.get("/maquinas"); // ✅ FIX
+        const res = await api.get("/maquinas");
 
-        const tiposUnicos = [...new Set(data.map(m => m.tipo_maquina))];
-        const locUnicas = [...new Set(data.map(m => m.localidad))];
+        const tiposUnicos = [...new Set(res.data.map(m => m.tipo_maquina))];
+        const locUnicas = [...new Set(res.data.map(m => m.localidad))];
 
         setTipos(tiposUnicos);
         setLocalidades(locUnicas);
@@ -57,13 +60,14 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
     try {
       setLoading(true);
 
-      await api.post("/maquinas", { // ✅ FIX
+      await api.post("/maquinas", {
         codigo: codigo.trim(),
         serial_maquina: serialMaquina.trim(),
         serial_billetero: serialBilletero.trim(),
         tipo_maquina: tipoFinal,
         estado,
-        localidad: localidadFinal
+        localidad: localidadFinal,
+        descripcion: descripcion.trim() // 🔥 AQUÍ SE ENVÍA
       });
 
       // 🔥 limpiar form
@@ -77,6 +81,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
       setNuevaLocalidad("");
       setUsarNuevaLocalidad(false);
       setUsarNuevoTipo(false);
+      setDescripcion(""); // ✅ limpiar descripción
 
       onCreated();
       onClose();
@@ -124,6 +129,14 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           className="w-full border p-2 rounded mb-3"
         />
 
+        {/* 🔥 NUEVO CAMPO DESCRIPCIÓN */}
+        <textarea
+          placeholder="Descripción..."
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          className="w-full border p-2 rounded mb-3"
+        />
+
         <label className="text-sm">Tipo</label>
         <select
           value={tipo}
@@ -154,7 +167,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
             onChange={(e) => setNuevoTipo(e.target.value)}
             className="w-full border p-2 rounded mb-2"
           />
-        )} 
+        )}
 
         <label className="text-sm">Estado</label>
         <select

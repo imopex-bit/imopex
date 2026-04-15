@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
-import api from "../api"; // ✅ CORREGIDO
+import api from "../api";
 
 export default function Index() {
 
@@ -187,7 +187,7 @@ export default function Index() {
                 <th className="p-3">Tipo</th>
                 <th className="p-3">Estado</th>
                 <th className="p-3">Localidad</th>
-                
+                <th className="p-3">Descripción</th>
                 <th className="p-3 text-center">Acciones</th>
               </tr>
             </thead>
@@ -218,6 +218,16 @@ export default function Index() {
 
                   <td className="p-3 text-gray-600">{m.localidad}</td>
 
+                  {/* ✅ DESCRIPCIÓN */}
+                  <td className="p-3 text-gray-700">
+                    {m.descripcion
+                      ? m.descripcion.length > 40
+                        ? m.descripcion.slice(0, 40) + "..."
+                        : m.descripcion
+                      : "-"}
+                  </td>
+
+                  {/* ACCIONES */}
                   <td className="p-3">
                     <div className="flex gap-2 justify-center">
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api";
+import api from "../api";
 
 export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
@@ -10,6 +10,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
   const [usarNueva, setUsarNueva] = useState(false);
 
+  // ✅ NUEVO ESTADO
+  const [descripcion, setDescripcion] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   // 🔹 cargar datos
@@ -18,12 +21,13 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
     setEstado(maquina.estado || "");
     setLocalidad(maquina.localidad || "");
+    setDescripcion(maquina.descripcion || ""); // ✅ cargar descripción
 
     const cargarLocalidades = async () => {
       try {
-        const data = await api.get("/maquinas");
+        const res = await api.get("/maquinas");
 
-        const unicas = [...new Set(data.map(m => m.localidad))];
+        const unicas = [...new Set(res.data.map(m => m.localidad))];
         setLocalidades(unicas);
 
       } catch {
@@ -48,12 +52,13 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
     try {
       await api.put(`/maquinas/${maquina.id}`, {
         estado,
-        localidad: finalLocalidad
+        localidad: finalLocalidad,
+        descripcion: descripcion.trim() // ✅ enviar descripción
       });
 
       alert("Actualizado ✅");
 
-      onUpdated(); // refresca dashboard
+      onUpdated();
       onClose();
 
     } catch {
@@ -130,6 +135,16 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
                 className="w-full border p-2 rounded mb-3"
               />
             )}
+
+            {/* 🔥 NUEVO CAMPO DESCRIPCIÓN */}
+            <label className="block mb-1 font-semibold">Descripción</label>
+
+            <textarea
+              placeholder="Descripción..."
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className="w-full border p-2 rounded mb-3"
+            />
 
             {/* BOTÓN */}
             <button

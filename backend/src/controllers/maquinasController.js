@@ -93,12 +93,12 @@ export const crearMaquina = async (req, res) => {
 // ✏️ EDITAR
 export const editarMaquina = async (req, res) => {
   const { id } = req.params;
-  const { estado, localidad } = req.body;
+  const { estado, localidad, descripcion } = req.body;
 
   try {
     const { data, error } = await supabase
       .from("maquinas")
-      .update({ estado, localidad })
+      .update({ estado, localidad, descripcion})
       .eq("id", id)
       .select();
 
