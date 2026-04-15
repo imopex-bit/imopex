@@ -154,7 +154,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
             onChange={(e) => setNuevoTipo(e.target.value)}
             className="w-full border p-2 rounded mb-2"
           />
-        )}
+        )} 
 
         <label className="text-sm">Estado</label>
         <select

@@ -187,6 +187,7 @@ export default function Index() {
                 <th className="p-3">Tipo</th>
                 <th className="p-3">Estado</th>
                 <th className="p-3">Localidad</th>
+                
                 <th className="p-3 text-center">Acciones</th>
               </tr>
             </thead>
