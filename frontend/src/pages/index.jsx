@@ -26,15 +26,23 @@ export default function Index() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) navigate("/");
-  }, []);
+  }, [navigate]);
 
   // 🔹 cargar máquinas
   const cargar = async () => {
     try {
       const res = await api.get("/maquinas");
-      setTodas(res.data || []);
+
+      // 🔥 VALIDACIÓN IMPORTANTE
+      if (!Array.isArray(res)) {
+        console.error("Respuesta inesperada:", res);
+        setTodas([]);
+        return;
+      }
+
+      setTodas(res);
     } catch (err) {
-      console.log(err);
+      console.error(err);
       alert("Error cargando máquinas ❌");
     }
   };
@@ -218,7 +226,6 @@ export default function Index() {
 
                   <td className="p-3 text-gray-600">{m.localidad}</td>
 
-                  {/* ✅ DESCRIPCIÓN */}
                   <td className="p-3 text-gray-700">
                     {m.descripcion
                       ? m.descripcion.length > 40
@@ -227,7 +234,6 @@ export default function Index() {
                       : "-"}
                   </td>
 
-                  {/* ACCIONES */}
                   <td className="p-3">
                     <div className="flex gap-2 justify-center">
 
@@ -281,4 +287,4 @@ export default function Index() {
       </div>
     </div>
   );
-}
+                    }
