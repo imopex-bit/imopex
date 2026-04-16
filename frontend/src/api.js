@@ -9,7 +9,7 @@ const request = async (endpoint, options = {}) => {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...(options.headers || {})
     }
   });
@@ -24,19 +24,24 @@ const request = async (endpoint, options = {}) => {
   return data;
 };
 
-// 🔥 ESTA LÍNEA ES LA CLAVE
-export const api = {
+// 🔥 AHORA ES DEFAULT EXPORT
+const api = {
   get: (endpoint) => request(endpoint, { method: "GET" }),
+
   post: (endpoint, body) =>
     request(endpoint, {
       method: "POST",
       body: JSON.stringify(body)
     }),
+
   put: (endpoint, body) =>
     request(endpoint, {
       method: "PUT",
       body: JSON.stringify(body)
     }),
+
   delete: (endpoint) =>
     request(endpoint, { method: "DELETE" })
 };
+
+export default api;
