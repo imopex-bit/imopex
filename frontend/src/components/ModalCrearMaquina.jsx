@@ -21,31 +21,25 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   const [descripcion, setDescripcion] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔹 cargar datos
   useEffect(() => {
     const cargar = async () => {
       try {
         const data = await api.get("/maquinas");
-
         setTipos([...new Set(data.map(m => m.tipo_maquina))]);
         setLocalidades([...new Set(data.map(m => m.localidad))]);
-
       } catch {
         alert("Error cargando datos ❌");
       }
     };
-
     cargar();
   }, []);
 
-  // 🔥 guardar
   const guardar = async () => {
-
     const tipoFinal = mostrarNuevoTipo ? nuevoTipo.trim() : tipo;
     const localidadFinal = mostrarNuevaLocalidad ? nuevaLocalidad.trim() : localidad;
 
-    if (!codigo.trim() || !serialMaquina.trim() || !serialBilletero.trim()) {
-      return alert("Completa todos los campos ❌");
+    if (!codigo || !serialMaquina || !serialBilletero) {
+      return alert("Completa los campos ❌");
     }
 
     if (!tipoFinal || !estado || !localidadFinal) {
@@ -56,21 +50,20 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
       setLoading(true);
 
       await api.post("/maquinas", {
-        codigo: codigo.trim(),
-        serial_maquina: serialMaquina.trim(),
-        serial_billetero: serialBilletero.trim(),
+        codigo,
+        serial_maquina: serialMaquina,
+        serial_billetero: serialBilletero,
         tipo_maquina: tipoFinal,
         estado,
         localidad: localidadFinal,
-        descripcion: descripcion.trim()
+        descripcion
       });
 
       onCreated();
       onClose();
 
-    } catch (error) {
-      console.log(error);
-      alert("Error creando máquina ❌");
+    } catch {
+      alert("Error creando ❌");
     } finally {
       setLoading(false);
     }
@@ -79,143 +72,165 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-xl shadow-xl">
+      <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
 
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-bold">➕ Nueva Máquina</h2>
-          <button onClick={onClose}>✖</button>
+        {/* HEADER */}
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-bold">Nueva Máquina</h2>
+
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 text-xl"
+          >
+            ✖
+          </button>
         </div>
 
-        <input
-          placeholder="Código"
-          value={codigo}
-          onChange={(e) => setCodigo(e.target.value)}
-          className="w-full border p-2 rounded mb-2"
-        />
+        {/* BODY */}
+        <div className="p-4 space-y-3">
 
-        <input
-          placeholder="Serial máquina"
-          value={serialMaquina}
-          onChange={(e) => setSerialMaquina(e.target.value)}
-          className="w-full border p-2 rounded mb-2"
-        />
-
-        <input
-          placeholder="Serial billetero"
-          value={serialBilletero}
-          onChange={(e) => setSerialBilletero(e.target.value)}
-          className="w-full border p-2 rounded mb-2"
-        />
-
-        <textarea
-          placeholder="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          className="w-full border p-2 rounded mb-3"
-        />
-
-        {/* 🔥 TIPO */}
-        <label className="text-sm font-semibold">Tipo</label>
-
-        <select
-          value={tipo}
-          onChange={(e) => {
-            setTipo(e.target.value);
-            setMostrarNuevoTipo(false);
-            setNuevoTipo("");
-          }}
-          disabled={mostrarNuevoTipo}
-          className="w-full border p-2 rounded mb-2"
-        >
-          <option value="">Seleccionar tipo</option>
-          {tipos.map((t, i) => (
-            <option key={i} value={t}>{t}</option>
-          ))}
-        </select>
-
-        <button
-          onClick={() => {
-            setMostrarNuevoTipo(!mostrarNuevoTipo);
-            setTipo("");
-          }}
-          className="text-blue-500 text-sm mb-2"
-        >
-          ➕ Agregar nuevo tipo
-        </button>
-
-        {mostrarNuevoTipo && (
           <input
-            placeholder="Nuevo tipo..."
-            value={nuevoTipo}
-            onChange={(e) => {
-              setNuevoTipo(e.target.value);
-              setTipo("");
-            }}
-            className="w-full border p-2 rounded mb-3"
+            placeholder="Código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+            className="w-full border p-2 rounded"
           />
-        )}
 
-        {/* 🔥 ESTADO */}
-        <label className="text-sm font-semibold">Estado</label>
-
-        <select
-          value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-          className="w-full border p-2 rounded mb-3"
-        >
-          <option value="">Seleccionar estado</option>
-          <option value="funcional">Funcional</option>
-          <option value="no funcional">No funcional</option>
-        </select>
-
-        {/* 🔥 UBICACIÓN */}
-        <label className="text-sm font-semibold">Ubicación</label>
-
-        <select
-          value={localidad}
-          onChange={(e) => {
-            setLocalidad(e.target.value);
-            setMostrarNuevaLocalidad(false);
-            setNuevaLocalidad("");
-          }}
-          disabled={mostrarNuevaLocalidad}
-          className="w-full border p-2 rounded mb-2"
-        >
-          <option value="">Seleccionar ubicación</option>
-          {localidades.map((l, i) => (
-            <option key={i} value={l}>{l}</option>
-          ))}
-        </select>
-
-        <button
-          onClick={() => {
-            setMostrarNuevaLocalidad(!mostrarNuevaLocalidad);
-            setLocalidad("");
-          }}
-          className="text-blue-500 text-sm mb-2"
-        >
-          ➕ Agregar nueva ubicación
-        </button>
-
-        {mostrarNuevaLocalidad && (
           <input
-            placeholder="Nueva ubicación..."
-            value={nuevaLocalidad}
-            onChange={(e) => {
-              setNuevaLocalidad(e.target.value);
-              setLocalidad("");
-            }}
-            className="w-full border p-2 rounded mb-3"
+            placeholder="Serial máquina"
+            value={serialMaquina}
+            onChange={(e) => setSerialMaquina(e.target.value)}
+            className="w-full border p-2 rounded"
           />
-        )}
 
-        <button
-          onClick={guardar}
-          disabled={loading}
-          className="w-full bg-green-500 text-white py-2 rounded"
-        >
-          {loading ? "Creando..." : "Crear máquina"}
-        </button>
+          <input
+            placeholder="Serial billetero"
+            value={serialBilletero}
+            onChange={(e) => setSerialBilletero(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+
+          <textarea
+            placeholder="Descripción"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+
+          {/* TIPO */}
+          <div>
+            <label className="text-sm font-semibold">Tipo</label>
+
+            <select
+              value={tipo}
+              onChange={(e) => {
+                setTipo(e.target.value);
+                setMostrarNuevoTipo(false);
+              }}
+              disabled={mostrarNuevoTipo}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">Seleccionar tipo</option>
+              {tipos.map((t, i) => (
+                <option key={i}>{t}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => {
+                setMostrarNuevoTipo(!mostrarNuevoTipo);
+                setTipo("");
+              }}
+              className="text-blue-500 text-sm mt-1"
+            >
+              + Nuevo tipo
+            </button>
+
+            {mostrarNuevoTipo && (
+              <input
+                placeholder="Nuevo tipo..."
+                value={nuevoTipo}
+                onChange={(e) => setNuevoTipo(e.target.value)}
+                className="w-full border p-2 rounded mt-2"
+              />
+            )}
+          </div>
+
+          {/* ESTADO */}
+          <div>
+            <label className="text-sm font-semibold">Estado</label>
+
+            <select
+              value={estado}
+              onChange={(e) => setEstado(e.target.value)}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">Seleccionar</option>
+              <option value="funcional">Funcional</option>
+              <option value="no funcional">No funcional</option>
+            </select>
+          </div>
+
+          {/* UBICACIÓN */}
+          <div>
+            <label className="text-sm font-semibold">Ubicación</label>
+
+            <select
+              value={localidad}
+              onChange={(e) => {
+                setLocalidad(e.target.value);
+                setMostrarNuevaLocalidad(false);
+              }}
+              disabled={mostrarNuevaLocalidad}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">Seleccionar ubicación</option>
+              {localidades.map((l, i) => (
+                <option key={i}>{l}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => {
+                setMostrarNuevaLocalidad(!mostrarNuevaLocalidad);
+                setLocalidad("");
+              }}
+              className="text-blue-500 text-sm mt-1"
+            >
+              + Nueva ubicación
+            </button>
+
+            {mostrarNuevaLocalidad && (
+              <input
+                placeholder="Nueva ubicación..."
+                value={nuevaLocalidad}
+                onChange={(e) => setNuevaLocalidad(e.target.value)}
+                className="w-full border p-2 rounded mt-2"
+              />
+            )}
+          </div>
+
+        </div>
+
+        {/* FOOTER */}
+        <div className="p-4 border-t flex gap-2">
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-300 py-2 rounded"
+          >
+            ✖ Cancelar
+          </button>
+
+          <button
+            onClick={guardar}
+            disabled={loading}
+            className="w-full bg-green-500 text-white py-2 rounded flex items-center justify-center gap-1"
+          >
+            {loading ? "..." : "+ Crear"}
+          </button>
+
+        </div>
 
       </div>
     </div>

@@ -24,12 +24,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
     const cargarLocalidades = async () => {
       try {
         const data = await api.get("/maquinas");
-
-        const unicas = [...new Set(data.map(m => m.localidad))];
-        setLocalidades(unicas);
-
+        setLocalidades([...new Set(data.map(m => m.localidad))]);
       } catch (error) {
-        console.log("ERROR:", error);
+        console.log(error);
         alert("Error cargando localidades ❌");
       } finally {
         setLoading(false);
@@ -40,7 +37,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
   }, [maquina]);
 
-  // 🔥 guardar cambios
+  // 🔥 guardar
   const guardar = async () => {
 
     const finalLocalidad = mostrarNuevaLocalidad
@@ -61,7 +58,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
       onClose();
 
     } catch (error) {
-      console.log("ERROR ACTUALIZANDO:", error);
+      console.log(error);
       alert("Error actualizando ❌");
     }
   };
@@ -71,35 +68,42 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      {/* 🔥 MODAL MEJORADO */}
-      <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-xl shadow-xl">
+      <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
 
-        <div className="flex justify-between items-center mb-3">
+        {/* HEADER */}
+        <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-lg font-bold">
             Editar Máquina {maquina.codigo}
           </h2>
 
-          <button onClick={onClose}>✖</button>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 text-xl"
+          >
+            ✖
+          </button>
         </div>
 
-        {loading ? (
-          <p className="text-center">Cargando...</p>
-        ) : (
-          <>
-            {/* ESTADO */}
+        {/* BODY */}
+        <div className="p-4 space-y-3">
+
+          {/* ESTADO */}
+          <div>
             <label className="text-sm font-semibold">Estado</label>
 
             <select
               value={estado}
               onChange={(e) => setEstado(e.target.value)}
-              className="w-full border p-2 rounded mb-3"
+              className="w-full border p-2 rounded"
             >
               <option value="">Seleccionar</option>
               <option value="funcional">Funcional</option>
               <option value="no funcional">No funcional</option>
             </select>
+          </div>
 
-            {/* UBICACIÓN */}
+          {/* UBICACIÓN */}
+          <div>
             <label className="text-sm font-semibold">Ubicación</label>
 
             <select
@@ -110,7 +114,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
                 setNuevaLocalidad("");
               }}
               disabled={mostrarNuevaLocalidad}
-              className="w-full border p-2 rounded mb-2"
+              className="w-full border p-2 rounded"
             >
               <option value="">Seleccionar ubicación</option>
 
@@ -124,43 +128,56 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
                 setMostrarNuevaLocalidad(!mostrarNuevaLocalidad);
                 setLocalidad("");
               }}
-              className="text-blue-500 text-sm mb-2"
+              className="text-blue-500 text-sm mt-1"
             >
-              ➕ Agregar nueva ubicación
+              + Nueva ubicación
             </button>
 
             {mostrarNuevaLocalidad && (
               <input
-                type="text"
                 placeholder="Nueva ubicación..."
                 value={nuevaLocalidad}
                 onChange={(e) => {
                   setNuevaLocalidad(e.target.value);
                   setLocalidad("");
                 }}
-                className="w-full border p-2 rounded mb-3"
+                className="w-full border p-2 rounded mt-2"
               />
             )}
+          </div>
 
-            {/* DESCRIPCIÓN */}
+          {/* DESCRIPCIÓN */}
+          <div>
             <label className="text-sm font-semibold">Descripción</label>
 
             <textarea
               placeholder="Descripción..."
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              className="w-full border p-2 rounded mb-3"
+              className="w-full border p-2 rounded"
             />
+          </div>
 
-            {/* BOTÓN */}
-            <button
-              onClick={guardar}
-              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-            >
-              Guardar cambios
-            </button>
-          </>
-        )}
+        </div>
+
+        {/* FOOTER */}
+        <div className="p-4 border-t flex gap-2">
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-300 py-2 rounded"
+          >
+            ✖ Cancelar
+          </button>
+
+          <button
+            onClick={guardar}
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          >
+            Guardar cambios
+          </button>
+
+        </div>
 
       </div>
     </div>
