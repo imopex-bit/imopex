@@ -69,7 +69,8 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
       onClose();
 
     } catch (error) {
-      alert(error.message || "Error creando ❌");
+      console.log(error);
+      alert("Error creando máquina ❌");
     } finally {
       setLoading(false);
     }
@@ -78,7 +79,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      {/* 🔥 MODAL MÁS PEQUEÑO Y CON SCROLL */}
       <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-xl shadow-xl">
 
         <div className="flex justify-between items-center mb-3">
@@ -114,12 +114,17 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           className="w-full border p-2 rounded mb-3"
         />
 
-        {/* 🔥 TIPO MEJORADO */}
+        {/* 🔥 TIPO */}
         <label className="text-sm font-semibold">Tipo</label>
 
         <select
           value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
+          onChange={(e) => {
+            setTipo(e.target.value);
+            setMostrarNuevoTipo(false);
+            setNuevoTipo("");
+          }}
+          disabled={mostrarNuevoTipo}
           className="w-full border p-2 rounded mb-2"
         >
           <option value="">Seleccionar tipo</option>
@@ -129,7 +134,10 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
         </select>
 
         <button
-          onClick={() => setMostrarNuevoTipo(!mostrarNuevoTipo)}
+          onClick={() => {
+            setMostrarNuevoTipo(!mostrarNuevoTipo);
+            setTipo("");
+          }}
           className="text-blue-500 text-sm mb-2"
         >
           ➕ Agregar nuevo tipo
@@ -139,7 +147,10 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           <input
             placeholder="Nuevo tipo..."
             value={nuevoTipo}
-            onChange={(e) => setNuevoTipo(e.target.value)}
+            onChange={(e) => {
+              setNuevoTipo(e.target.value);
+              setTipo("");
+            }}
             className="w-full border p-2 rounded mb-3"
           />
         )}
@@ -157,12 +168,17 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           <option value="no funcional">No funcional</option>
         </select>
 
-        {/* 🔥 UBICACIÓN MEJORADA */}
+        {/* 🔥 UBICACIÓN */}
         <label className="text-sm font-semibold">Ubicación</label>
 
         <select
           value={localidad}
-          onChange={(e) => setLocalidad(e.target.value)}
+          onChange={(e) => {
+            setLocalidad(e.target.value);
+            setMostrarNuevaLocalidad(false);
+            setNuevaLocalidad("");
+          }}
+          disabled={mostrarNuevaLocalidad}
           className="w-full border p-2 rounded mb-2"
         >
           <option value="">Seleccionar ubicación</option>
@@ -172,7 +188,10 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
         </select>
 
         <button
-          onClick={() => setMostrarNuevaLocalidad(!mostrarNuevaLocalidad)}
+          onClick={() => {
+            setMostrarNuevaLocalidad(!mostrarNuevaLocalidad);
+            setLocalidad("");
+          }}
           className="text-blue-500 text-sm mb-2"
         >
           ➕ Agregar nueva ubicación
@@ -182,7 +201,10 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           <input
             placeholder="Nueva ubicación..."
             value={nuevaLocalidad}
-            onChange={(e) => setNuevaLocalidad(e.target.value)}
+            onChange={(e) => {
+              setNuevaLocalidad(e.target.value);
+              setLocalidad("");
+            }}
             className="w-full border p-2 rounded mb-3"
           />
         )}

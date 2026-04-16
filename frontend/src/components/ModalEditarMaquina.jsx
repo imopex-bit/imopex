@@ -8,10 +8,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
   const [localidad, setLocalidad] = useState("");
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
-  const [usarNueva, setUsarNueva] = useState(false);
+  const [mostrarNuevaLocalidad, setMostrarNuevaLocalidad] = useState(false);
 
   const [descripcion, setDescripcion] = useState("");
-
   const [loading, setLoading] = useState(true);
 
   // 🔹 cargar datos
@@ -31,7 +30,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
       } catch (error) {
         console.log("ERROR:", error);
-        alert(error.message || "Error cargando localidades ❌");
+        alert("Error cargando localidades ❌");
       } finally {
         setLoading(false);
       }
@@ -44,7 +43,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   // 🔥 guardar cambios
   const guardar = async () => {
 
-    const finalLocalidad = usarNueva ? nuevaLocalidad.trim() : localidad;
+    const finalLocalidad = mostrarNuevaLocalidad
+      ? nuevaLocalidad.trim()
+      : localidad;
 
     if (!estado) return alert("Selecciona estado ❌");
     if (!finalLocalidad) return alert("Selecciona ubicación ❌");
@@ -56,14 +57,12 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
         descripcion: descripcion.trim()
       });
 
-      alert("Actualizado ✅");
-
       onUpdated();
       onClose();
 
     } catch (error) {
       console.log("ERROR ACTUALIZANDO:", error);
-      alert(error.message || "Error actualizando ❌");
+      alert("Error actualizando ❌");
     }
   };
 
@@ -72,23 +71,23 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-      <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
+      {/* 🔥 MODAL MEJORADO */}
+      <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-xl shadow-xl">
 
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-bold">
             Editar Máquina {maquina.codigo}
           </h2>
 
-          <button onClick={onClose} className="text-gray-500 text-lg">
-            ✖
-          </button>
+          <button onClick={onClose}>✖</button>
         </div>
 
         {loading ? (
           <p className="text-center">Cargando...</p>
         ) : (
           <>
-            <label className="block mb-1 font-semibold">Estado</label>
+            {/* ESTADO */}
+            <label className="text-sm font-semibold">Estado</label>
 
             <select
               value={estado}
@@ -100,19 +99,17 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               <option value="no funcional">No funcional</option>
             </select>
 
-            <label className="block mb-1 font-semibold">Ubicación</label>
+            {/* UBICACIÓN */}
+            <label className="text-sm font-semibold">Ubicación</label>
 
             <select
-              value={usarNueva ? "nueva" : localidad}
+              value={localidad}
               onChange={(e) => {
-                if (e.target.value === "nueva") {
-                  setUsarNueva(true);
-                  setLocalidad("");
-                } else {
-                  setUsarNueva(false);
-                  setLocalidad(e.target.value);
-                }
+                setLocalidad(e.target.value);
+                setMostrarNuevaLocalidad(false);
+                setNuevaLocalidad("");
               }}
+              disabled={mostrarNuevaLocalidad}
               className="w-full border p-2 rounded mb-2"
             >
               <option value="">Seleccionar ubicación</option>
@@ -120,21 +117,33 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               {localidades.map((l, i) => (
                 <option key={i} value={l}>{l}</option>
               ))}
-
-              <option value="nueva">➕ Nueva ubicación</option>
             </select>
 
-            {usarNueva && (
+            <button
+              onClick={() => {
+                setMostrarNuevaLocalidad(!mostrarNuevaLocalidad);
+                setLocalidad("");
+              }}
+              className="text-blue-500 text-sm mb-2"
+            >
+              ➕ Agregar nueva ubicación
+            </button>
+
+            {mostrarNuevaLocalidad && (
               <input
                 type="text"
                 placeholder="Nueva ubicación..."
                 value={nuevaLocalidad}
-                onChange={(e) => setNuevaLocalidad(e.target.value)}
+                onChange={(e) => {
+                  setNuevaLocalidad(e.target.value);
+                  setLocalidad("");
+                }}
                 className="w-full border p-2 rounded mb-3"
               />
             )}
 
-            <label className="block mb-1 font-semibold">Descripción</label>
+            {/* DESCRIPCIÓN */}
+            <label className="text-sm font-semibold">Descripción</label>
 
             <textarea
               placeholder="Descripción..."
@@ -143,6 +152,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               className="w-full border p-2 rounded mb-3"
             />
 
+            {/* BOTÓN */}
             <button
               onClick={guardar}
               className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
