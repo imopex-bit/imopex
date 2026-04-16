@@ -29,7 +29,7 @@ function Login() {
         return;
       }
 
-      // 🔐 GUARDAR TOKEN (CORRECTO)
+      // 🔐 GUARDAR TOKEN
       localStorage.setItem("token", data.token);
 
       // 👤 GUARDAR USUARIO
@@ -37,8 +37,9 @@ function Login() {
 
       navigate("/dashboard");
 
-    } catch {
-      setMensaje("Error de conexión ❌");
+    } catch (error) {
+      // 🔥 AQUÍ ESTÁ LA CLAVE
+      setMensaje("ERROR: " + error.message);
     }
   };
 
