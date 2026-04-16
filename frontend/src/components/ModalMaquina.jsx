@@ -22,9 +22,10 @@ export default function ModalMaquina({ maquina, onClose }) {
     try {
       setLoading(true);
       const data = await api.get(`/maquinas/${maquina.id}`);
-      setDetalle(data);
-    } catch {
-      alert("Error cargando detalle ❌");
+      setDetalle(data || {});
+    } catch (error) {
+      console.log("ERROR DETALLE:", error);
+      alert(error.message || "Error cargando detalle ❌");
     } finally {
       setLoading(false);
     }
@@ -40,8 +41,9 @@ export default function ModalMaquina({ maquina, onClose }) {
       try {
         const data = await api.get("/usuarios");
         setUsuarios(data || []);
-      } catch {
-        alert("Error cargando usuarios ❌");
+      } catch (error) {
+        console.log("ERROR USUARIOS:", error);
+        alert(error.message || "Error cargando usuarios ❌");
       }
     };
 
@@ -56,7 +58,7 @@ export default function ModalMaquina({ maquina, onClose }) {
     }
 
     const f = usuarios.filter(u =>
-      u.nombre.toLowerCase().includes(busqueda.toLowerCase())
+      u.nombre?.toLowerCase().includes(busqueda.toLowerCase())
     );
 
     setFiltrados(f);
@@ -93,7 +95,7 @@ export default function ModalMaquina({ maquina, onClose }) {
 
     try {
       await api.post("/mantenimiento", {
-        descripcion,
+        descripcion: descripcion.trim(),
         maquinas_id: maquina.id,
         usuarios_id: tecnicosSeleccionados
       });
@@ -104,8 +106,9 @@ export default function ModalMaquina({ maquina, onClose }) {
 
       await cargarDetalle();
 
-    } catch {
-      alert("Error guardando ❌");
+    } catch (error) {
+      console.log("ERROR GUARDANDO:", error);
+      alert(error.message || "Error guardando ❌");
     }
   };
 
@@ -116,8 +119,9 @@ export default function ModalMaquina({ maquina, onClose }) {
     try {
       await api.delete(`/mantenimiento/${id}`);
       await cargarDetalle();
-    } catch {
-      alert("Error eliminando ❌");
+    } catch (error) {
+      console.log("ERROR ELIMINANDO:", error);
+      alert(error.message || "Error eliminando ❌");
     }
   };
 
@@ -129,8 +133,9 @@ export default function ModalMaquina({ maquina, onClose }) {
       onClose();
       window.location.href = "/dashboard";
 
-    } catch {
-      alert("Error eliminando ❌");
+    } catch (error) {
+      console.log("ERROR ELIMINANDO MAQUINA:", error);
+      alert(error.message || "Error eliminando ❌");
     }
   };
 
@@ -141,7 +146,6 @@ export default function ModalMaquina({ maquina, onClose }) {
 
       <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             Máquina {maquina.codigo}
@@ -165,7 +169,6 @@ export default function ModalMaquina({ maquina, onClose }) {
           <p className="text-center text-gray-500">Cargando...</p>
         ) : (
           <>
-            {/* HISTORIAL */}
             <div className="max-h-52 overflow-y-auto mb-4 border rounded p-2 bg-gray-50">
 
               <h3 className="font-semibold mb-2">Historial</h3>
@@ -204,7 +207,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               ))}
             </div>
 
-            {/* INPUT */}
             <textarea
               placeholder="Descripción mantenimiento..."
               value={descripcion}
@@ -212,7 +214,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-3"
             />
 
-            {/* BUSCAR */}
             <input
               type="text"
               placeholder="Buscar técnico..."
@@ -221,7 +222,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               className="w-full border p-2 rounded mb-2"
             />
 
-            {/* RESULTADOS */}
             {filtrados.map(u => (
               <div
                 key={u.id}
@@ -232,7 +232,6 @@ export default function ModalMaquina({ maquina, onClose }) {
               </div>
             ))}
 
-            {/* SELECCIONADOS */}
             <div className="flex gap-2 flex-wrap mt-2">
               {tecnicosSeleccionados.map(id => {
                 const user = usuarios.find(u => u.id === id);
@@ -259,7 +258,6 @@ export default function ModalMaquina({ maquina, onClose }) {
         )}
       </div>
 
-      {/* CONFIRM DELETE */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
 

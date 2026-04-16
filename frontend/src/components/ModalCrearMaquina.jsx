@@ -19,7 +19,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
   const [usarNuevaLocalidad, setUsarNuevaLocalidad] = useState(false);
 
-  // ✅ NUEVO ESTADO
   const [descripcion, setDescripcion] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -28,10 +27,10 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const res = await api.get("/maquinas");
+        const data = await api.get("/maquinas");
 
-        const tiposUnicos = [...new Set(res.data.map(m => m.tipo_maquina))];
-        const locUnicas = [...new Set(res.data.map(m => m.localidad))];
+        const tiposUnicos = [...new Set(data.map(m => m.tipo_maquina))];
+        const locUnicas = [...new Set(data.map(m => m.localidad))];
 
         setTipos(tiposUnicos);
         setLocalidades(locUnicas);
@@ -67,7 +66,7 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
         tipo_maquina: tipoFinal,
         estado,
         localidad: localidadFinal,
-        descripcion: descripcion.trim() // 🔥 AQUÍ SE ENVÍA
+        descripcion: descripcion.trim()
       });
 
       // 🔥 limpiar form
@@ -81,13 +80,14 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
       setNuevaLocalidad("");
       setUsarNuevaLocalidad(false);
       setUsarNuevoTipo(false);
-      setDescripcion(""); // ✅ limpiar descripción
+      setDescripcion("");
 
       onCreated();
       onClose();
 
-    } catch {
-      alert("Error creando máquina ❌");
+    } catch (error) {
+      console.log("ERROR CREANDO:", error);
+      alert(error.message || "Error creando máquina ❌");
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,6 @@ export default function ModalCrearMaquina({ onClose, onCreated }) {
           className="w-full border p-2 rounded mb-3"
         />
 
-        {/* 🔥 NUEVO CAMPO DESCRIPCIÓN */}
         <textarea
           placeholder="Descripción..."
           value={descripcion}

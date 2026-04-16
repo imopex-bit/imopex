@@ -10,7 +10,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   const [nuevaLocalidad, setNuevaLocalidad] = useState("");
   const [usarNueva, setUsarNueva] = useState(false);
 
-  // ✅ NUEVO ESTADO
   const [descripcion, setDescripcion] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -21,17 +20,18 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
     setEstado(maquina.estado || "");
     setLocalidad(maquina.localidad || "");
-    setDescripcion(maquina.descripcion || ""); // ✅ cargar descripción
+    setDescripcion(maquina.descripcion || "");
 
     const cargarLocalidades = async () => {
       try {
-        const res = await api.get("/maquinas");
+        const data = await api.get("/maquinas");
 
-        const unicas = [...new Set(res.data.map(m => m.localidad))];
+        const unicas = [...new Set(data.map(m => m.localidad))];
         setLocalidades(unicas);
 
-      } catch {
-        alert("Error cargando localidades ❌");
+      } catch (error) {
+        console.log("ERROR:", error);
+        alert(error.message || "Error cargando localidades ❌");
       } finally {
         setLoading(false);
       }
@@ -44,7 +44,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
   // 🔥 guardar cambios
   const guardar = async () => {
 
-    const finalLocalidad = usarNueva ? nuevaLocalidad : localidad;
+    const finalLocalidad = usarNueva ? nuevaLocalidad.trim() : localidad;
 
     if (!estado) return alert("Selecciona estado ❌");
     if (!finalLocalidad) return alert("Selecciona ubicación ❌");
@@ -53,7 +53,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
       await api.put(`/maquinas/${maquina.id}`, {
         estado,
         localidad: finalLocalidad,
-        descripcion: descripcion.trim() // ✅ enviar descripción
+        descripcion: descripcion.trim()
       });
 
       alert("Actualizado ✅");
@@ -61,8 +61,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
       onUpdated();
       onClose();
 
-    } catch {
-      alert("Error actualizando ❌");
+    } catch (error) {
+      console.log("ERROR ACTUALIZANDO:", error);
+      alert(error.message || "Error actualizando ❌");
     }
   };
 
@@ -73,7 +74,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
       <div className="bg-white w-full max-w-xl p-6 rounded-xl shadow-xl">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             Editar Máquina {maquina.codigo}
@@ -88,7 +88,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
           <p className="text-center">Cargando...</p>
         ) : (
           <>
-            {/* ESTADO */}
             <label className="block mb-1 font-semibold">Estado</label>
 
             <select
@@ -101,7 +100,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               <option value="no funcional">No funcional</option>
             </select>
 
-            {/* LOCALIDAD */}
             <label className="block mb-1 font-semibold">Ubicación</label>
 
             <select
@@ -136,7 +134,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               />
             )}
 
-            {/* 🔥 NUEVO CAMPO DESCRIPCIÓN */}
             <label className="block mb-1 font-semibold">Descripción</label>
 
             <textarea
@@ -146,7 +143,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               className="w-full border p-2 rounded mb-3"
             />
 
-            {/* BOTÓN */}
             <button
               onClick={guardar}
               className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
