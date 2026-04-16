@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 
 // 📄 Páginas
-import Login from "./pages/Login";
-import Index from "./pages/Index";
+import Login from "./pages/login";
+import Index from "./pages/index";
 import CrearMaquina from "./pages/CrearMaquina";
 import EditarMaquina from "./pages/EditarMaquina";
 import MaquinaDetalle from "./pages/MaquinaDetalle";
