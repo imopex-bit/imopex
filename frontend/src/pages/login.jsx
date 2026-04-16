@@ -13,33 +13,26 @@ function Login() {
     e.preventDefault();
 
     try {
-      const response = await api.post("/auth/login", {
+      const data = await api.post("/auth/login", {
         email,
         password
       });
 
-      const data = response.data;
+      console.log("LOGIN RESPONSE:", data);
 
-      // 🔐 Guardar token
+      if (!data || !data.token) {
+        setMensaje("Credenciales inválidas ❌");
+        return;
+      }
+
       localStorage.setItem("token", data.token);
-
-      // 👤 Guardar usuario
       localStorage.setItem("user", JSON.stringify(data.user));
 
       setMensaje("");
-
       navigate("/dashboard");
 
     } catch (error) {
-      // 🔥 MEJOR MENSAJE DE ERROR REAL
-      if (error.response) {
-        setMensaje(error.response.data.message || "Error en login");
-      } else if (error.request) {
-        setMensaje("Error de conexión con el servidor");
-      } else {
-        setMensaje("Error inesperado");
-      }
-
+      setMensaje(error.message || "Error en login");
       console.log("LOGIN ERROR:", error);
     }
   };
