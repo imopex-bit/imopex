@@ -9,13 +9,32 @@ import usuariosRoutes from "./routes/usuariosRoutes.js";
 
 const app = express();
 
-// 🔓 CORS
-app.use(cors({ origin: true }));
+// 🔥 CORS (PRODUCCIÓN + DESARROLLO)
+const allowedOrigins = [
+  "https://imopex.vercel.app" 
+];
 
-// 📥 JSON
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permite herramientas como Postman o requests sin origin
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("❌ Bloqueado por CORS"));
+  },
+  credentials: true
+}));
+
+// 📥 JSON middleware
 app.use(express.json());
 
-// 🧪 Ruta base
+// 🧠 IMPORTANTE (recomendado para login con proxies como Render)
+app.set("trust proxy", 1);
+
+// 🧪 Ruta base para probar backend
 app.get("/api", (req, res) => {
   res.send("API FUNCIONANDO 🔥");
 });
