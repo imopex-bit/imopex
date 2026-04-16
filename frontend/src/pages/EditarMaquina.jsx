@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../api";
+import api from "../api"; // ✅ IMPORT CORRECTO
 
 export default function EditarMaquina() {
 
@@ -21,20 +21,23 @@ export default function EditarMaquina() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        // 🔥 DETALLE
-        const data = await api.get(`/maquinas/${id}`);
+        // 🔹 DETALLE
+        const res = await api.get(`/maquinas/${id}`);
+        const data = res.data || res;
 
         setMaquina(data);
         setEstado(data.estado || "");
         setLocalidad(data.localidad || "");
 
-        // 🔥 LISTA PARA LOCALIDADES
-        const data2 = await api.get("/maquinas");
+        // 🔹 LISTA DE MÁQUINAS (para localidades)
+        const res2 = await api.get("/maquinas");
+        const lista = res2.data || res2;
 
-        const unicas = [...new Set(data2.map(m => m.localidad))];
+        const unicas = [...new Set(lista.map(m => m.localidad).filter(Boolean))];
         setLocalidades(unicas);
 
-      } catch {
+      } catch (err) {
+        console.log(err);
         alert("Error cargando datos ❌");
       }
     };
@@ -73,7 +76,8 @@ export default function EditarMaquina() {
       alert("Máquina actualizada ✅");
       navigate("/dashboard");
 
-    } catch {
+    } catch (err) {
+      console.log(err);
       alert("Error actualizando ❌");
     }
   };
@@ -171,4 +175,4 @@ export default function EditarMaquina() {
       </div>
     </div>
   );
-}
+      }
