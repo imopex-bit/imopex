@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API = "https://imopex.onrender.com/api";
+import api from "../api"; // 🔥 IMPORT CORRECTO
 
 function Login() {
   const navigate = useNavigate();
@@ -14,20 +13,8 @@ function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${API}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMensaje(data.error || "Error en login ❌");
-        return;
-      }
+      // 🔥 USAMOS api.js
+      const data = await api.post("/auth/login", { email, password });
 
       // 🔐 GUARDAR TOKEN
       localStorage.setItem("token", data.token);
@@ -38,8 +25,7 @@ function Login() {
       navigate("/dashboard");
 
     } catch (error) {
-      // 🔥 AQUÍ ESTÁ LA CLAVE
-      setMensaje("ERROR: " + error.message);
+      setMensaje(error.message);
     }
   };
 
