@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api";
+import api from "../api"; // ✅ IMPORT CORRECTO
 
 export default function CrearMaquina() {
   const navigate = useNavigate();
@@ -29,12 +29,14 @@ export default function CrearMaquina() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const data = await api.get("/maquinas");
+        const res = await api.get("/maquinas");
+        const data = res.data || res;
 
-        setTipos([...new Set(data.map(m => m.tipo_maquina))]);
-        setLocalidades([...new Set(data.map(m => m.localidad))]);
+        setTipos([...new Set(data.map(m => m.tipo_maquina).filter(Boolean))]);
+        setLocalidades([...new Set(data.map(m => m.localidad).filter(Boolean))]);
 
-      } catch {
+      } catch (err) {
+        console.log(err);
         alert("Error cargando datos ❌");
       }
     };
@@ -76,7 +78,8 @@ export default function CrearMaquina() {
 
       navigate("/dashboard");
 
-    } catch {
+    } catch (err) {
+      console.log(err);
       alert("Error guardando ❌");
     } finally {
       setLoading(false);
@@ -131,6 +134,7 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-3 border rounded"
         />
 
+        {/* TIPO */}
         <select
           value={tipo}
           onChange={(e) => {
@@ -140,7 +144,9 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-2 border rounded"
         >
           <option value="">Seleccionar tipo</option>
-          {tipos.map((t, i) => <option key={i}>{t}</option>)}
+          {tipos.map((t, i) => (
+            <option key={i} value={t}>{t}</option>
+          ))}
         </select>
 
         <input
@@ -153,6 +159,7 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-3 border rounded"
         />
 
+        {/* ESTADO */}
         <select
           value={estado}
           onChange={(e) => setEstado(e.target.value)}
@@ -163,6 +170,7 @@ export default function CrearMaquina() {
           <option value="no funcional">No funcional</option>
         </select>
 
+        {/* LOCALIDAD */}
         <select
           value={localidad}
           onChange={(e) => {
@@ -172,7 +180,9 @@ export default function CrearMaquina() {
           className="w-full p-2 mb-2 border rounded"
         >
           <option value="">Seleccionar localidad</option>
-          {localidades.map((l, i) => <option key={i}>{l}</option>)}
+          {localidades.map((l, i) => (
+            <option key={i} value={l}>{l}</option>
+          ))}
         </select>
 
         <input
