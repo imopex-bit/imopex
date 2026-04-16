@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../api"; // 🔥 USAR API CENTRAL
+import api from "../api"; // ✅ default import
 
 export default function MaquinaDetalle() {
   const { id } = useParams();
@@ -21,9 +21,10 @@ export default function MaquinaDetalle() {
   const cargarMaquina = async () => {
     try {
       setLoading(true);
-      const data = await api.get(`/maquinas/${id}`);
-      setMaquina(data);
-    } catch {
+      const res = await api.get(`/maquinas/${id}`);
+      setMaquina(res.data || res);
+    } catch (err) {
+      console.log(err);
       alert("Error cargando máquina ❌");
     } finally {
       setLoading(false);
@@ -33,9 +34,10 @@ export default function MaquinaDetalle() {
   // 🔹 cargar usuarios
   const cargarUsuarios = async () => {
     try {
-      const data = await api.get("/usuarios");
-      setUsuarios(data || []);
-    } catch {
+      const res = await api.get("/usuarios");
+      setUsuarios(res.data || res);
+    } catch (err) {
+      console.log(err);
       alert("Error cargando usuarios ❌");
     }
   };
@@ -51,7 +53,7 @@ export default function MaquinaDetalle() {
 
     setFiltrados(
       usuarios.filter(u =>
-        u.nombre.toLowerCase().includes(busqueda.toLowerCase())
+        (u.nombre || "").toLowerCase().includes(busqueda.toLowerCase())
       )
     );
   }, [busqueda, usuarios]);
@@ -78,7 +80,8 @@ export default function MaquinaDetalle() {
       setSeleccionados([]);
       setBusqueda("");
 
-    } catch {
+    } catch (err) {
+      console.log(err);
       alert("Error guardando ❌");
     }
   };
@@ -88,7 +91,8 @@ export default function MaquinaDetalle() {
     try {
       await api.delete(`/maquinas/${id}`);
       navigate("/dashboard");
-    } catch {
+    } catch (err) {
+      console.log(err);
       alert("Error eliminando ❌");
     }
   };
