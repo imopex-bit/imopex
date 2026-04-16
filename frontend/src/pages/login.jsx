@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api"; // 🔥 IMPORT CORRECTO
+import api from "../api";
 
 function Login() {
   const navigate = useNavigate();
@@ -13,26 +13,41 @@ function Login() {
     e.preventDefault();
 
     try {
-      // 🔥 USAMOS api.js
-      const data = await api.post("/auth/login", { email, password });
+      const response = await api.post("/auth/login", {
+        email,
+        password
+      });
 
-      // 🔐 GUARDAR TOKEN
+      const data = response.data;
+
+      // 🔐 Guardar token
       localStorage.setItem("token", data.token);
 
-      // 👤 GUARDAR USUARIO
+      // 👤 Guardar usuario
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      setMensaje("");
 
       navigate("/dashboard");
 
     } catch (error) {
-      setMensaje(error.message);
+      // 🔥 MEJOR MENSAJE DE ERROR REAL
+      if (error.response) {
+        setMensaje(error.response.data.message || "Error en login");
+      } else if (error.request) {
+        setMensaje("Error de conexión con el servidor");
+      } else {
+        setMensaje("Error inesperado");
+      }
+
+      console.log("LOGIN ERROR:", error);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
-      
-      <form 
+
+      <form
         onSubmit={handleLogin}
         className="bg-white p-8 rounded-2xl shadow-xl w-80"
       >
@@ -56,7 +71,7 @@ function Login() {
           className="w-full p-3 mb-4 border rounded-lg"
         />
 
-        <button 
+        <button
           type="submit"
           className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg"
         >
