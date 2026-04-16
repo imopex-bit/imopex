@@ -1,10 +1,14 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "./pages/login";
-import Index from "./pages/index";
+
+// 📄 Páginas
+import Login from "./pages/Login";
+import Index from "./pages/Index";
 import CrearMaquina from "./pages/CrearMaquina";
 import EditarMaquina from "./pages/EditarMaquina";
-import ProtectedRoute from "./components/ProtectedRoute";
 import MaquinaDetalle from "./pages/MaquinaDetalle";
+
+// 🔐 Protección
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -13,7 +17,7 @@ function App() {
       {/* 🔐 LOGIN */}
       <Route path="/" element={<Login />} />
 
-      {/* 📊 Dashboard */}
+      {/* 📊 DASHBOARD */}
       <Route
         path="/dashboard"
         element={
@@ -23,7 +27,7 @@ function App() {
         }
       />
 
-      {/* 🛠️ CRUD */}
+      {/* ➕ CREAR */}
       <Route
         path="/crear"
         element={
@@ -33,6 +37,7 @@ function App() {
         }
       />
 
+      {/* ✏️ EDITAR */}
       <Route
         path="/editar/:id"
         element={
@@ -41,6 +46,8 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* 🔍 DETALLE */}
       <Route
         path="/maquina/:id"
         element={
@@ -51,7 +58,6 @@ function App() {
       />
 
     </Routes>
-    
   );
 }
 
