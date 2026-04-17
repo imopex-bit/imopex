@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wrench, User, Calendar, Trash2, AlertCircle, Save, Plus } from "lucide-react";
+import { X, Wrench, User, Calendar, Trash2, AlertCircle, Save, Plus, History } from "lucide-react";
 import api from "../api";
 
 export default function ModalMaquina({ maquina, onClose }) {
