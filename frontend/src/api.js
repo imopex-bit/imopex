@@ -1,4 +1,5 @@
-const API = "https://imopex.onrender.com/api";
+const API = "http://localhost:3000/api";
+
 
 const getToken = () => localStorage.getItem("token");
 

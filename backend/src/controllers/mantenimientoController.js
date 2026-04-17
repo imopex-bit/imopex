@@ -1,5 +1,37 @@
 import { supabase } from "../config/supabase.js";
 
+// 📦 LISTAR
+export const getMantenimientos = async (req, res) => {
+  try {
+    const { data: mantenimientos, error } = await supabase
+      .from("mantenimiento")
+      .select(`
+        *,
+        maquinas (codigo),
+        mantenimiento_usuarios (
+          usuarios (nombre)
+        )
+      `)
+      .order("fecha", { ascending: false });
+
+    if (error) throw error;
+
+    // Formatear para que el frontend lo entienda fácilmente
+    const resultado = mantenimientos.map(m => ({
+      id: m.id,
+      maquina_codigo: m.maquinas?.codigo || "N/A",
+      fecha: m.fecha,
+      descripcion: m.descripcion,
+      responsables: m.mantenimiento_usuarios?.map(mu => mu.usuarios?.nombre).filter(Boolean) || []
+    }));
+
+    res.json(resultado);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 // ➕ CREAR
 export const crearMantenimiento = async (req, res) => {
   const { descripcion, maquinas_id, usuarios_id } = req.body;

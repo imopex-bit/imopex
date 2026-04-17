@@ -4,7 +4,8 @@ import {
   getMaquinaDetalle,
   crearMaquina,
   editarMaquina,
-  eliminarMaquina
+  eliminarMaquina,
+  importMaquinas
 } from "../controllers/maquinasController.js";
 
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -25,5 +26,9 @@ router.put("/:id", authMiddleware, editarMaquina);
 
 // 🗑️ ELIMINAR
 router.delete("/:id", authMiddleware, eliminarMaquina);
+
+// 📥 IMPORTAR EXCEL
+router.post("/import", authMiddleware, importMaquinas);
+
 
 export default router;

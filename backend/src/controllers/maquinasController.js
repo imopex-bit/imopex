@@ -137,3 +137,26 @@ export const eliminarMaquina = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// 📥 IMPORTAR
+export const importMaquinas = async (req, res) => {
+  try {
+    const maquinas = req.body; // Array de máquinas
+
+    if (!Array.isArray(maquinas)) {
+      return res.status(400).json({ error: "Se esperaba un array de máquinas" });
+    }
+
+    const { data, error } = await supabase
+      .from("maquinas")
+      .insert(maquinas)
+      .select();
+
+    if (error) throw error;
+
+    res.json({ message: `${data.length} máquinas importadas con éxito ✅`, data });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

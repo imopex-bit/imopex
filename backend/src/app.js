@@ -11,8 +11,10 @@ const app = express();
 
 // 🔥 CORS (PRODUCCIÓN + DESARROLLO)
 const allowedOrigins = [
-  "https://imopex.vercel.app" 
+  "https://imopex.vercel.app",
+  "http://localhost:5173"
 ];
+
 
 app.use(cors({
   origin: function (origin, callback) {
