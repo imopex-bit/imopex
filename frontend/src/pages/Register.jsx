@@ -42,7 +42,8 @@ export default function Register() {
             <Activity size={32} />
           </div>
           <h1 className="text-2xl font-bold">Crear Cuenta</h1>
-          <p className="text-blue-100 text-sm mt-1">Únete a la plataforma Imopex Cloud</p>
+          <p className="text-blue-100 text-sm mt-1">Únete a la plataforma Imopex</p>
+
         </div>
 
         <div className="p-8">

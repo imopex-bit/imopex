@@ -154,15 +154,15 @@ export default function Index() {
                 <Activity size={24} />
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                Imopex Cloud
+                Imopex
               </span>
             </div>
             <div className="hidden md:flex items-center gap-6">
               <Link to="/dashboard" className="text-blue-600 font-medium">Dashboard</Link>
               <Link to="/mantenimientos" className="text-slate-500 hover:text-blue-600 transition">Mantenimientos</Link>
               <Link to="/importar" className="text-slate-500 hover:text-blue-600 transition">Importar</Link>
-              <Link to="/api-panel" className="text-slate-500 hover:text-blue-600 transition">API</Link>
             </div>
+
             <button onClick={logout} className="flex items-center gap-2 text-slate-500 hover:text-red-600 transition">
               <LogOut size={20} />
               <span className="hidden sm:inline">Salir</span>

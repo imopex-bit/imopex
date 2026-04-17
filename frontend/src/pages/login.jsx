@@ -43,8 +43,9 @@ function Login() {
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
             <Activity size={32} />
           </div>
-          <h1 className="text-2xl font-bold">Imopex Cloud</h1>
+          <h1 className="text-2xl font-bold">Imopex</h1>
           <p className="text-blue-100 text-sm mt-1">Gestión de Flota y Mantenimiento</p>
+
         </div>
 
         <div className="p-8">
@@ -102,16 +103,12 @@ function Login() {
               )}
             </button>
 
-            <div className="text-center pt-4 border-t border-slate-100">
-              <Link to="/register" className="text-sm text-slate-500 hover:text-blue-600 transition font-medium">
-                ¿No tienes cuenta? <span className="text-blue-600 font-bold underline">Regístrate gratis</span>
-              </Link>
-            </div>
           </form>
         </div>
       </motion.div>
-      <p className="mt-8 text-slate-400 text-xs">© 2024 Imopex Cloud Solutions</p>
+      <p className="mt-8 text-slate-400 text-xs">© 2024 Imopex Solutions</p>
     </div>
+
   );
 }
 

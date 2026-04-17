@@ -7,9 +7,7 @@ import CrearMaquina from "./pages/CrearMaquina";
 import EditarMaquina from "./pages/EditarMaquina";
 import MaquinaDetalle from "./pages/MaquinaDetalle";
 import ImportarExcel from "./pages/ImportarExcel";
-import ApiPanel from "./pages/ApiPanel";
 import Mantenimientos from "./pages/Mantenimientos";
-import Register from "./pages/Register";
 
 // 🔐 Protección
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -20,7 +18,6 @@ function App() {
 
       {/* 🔐 LOGIN */}
       <Route path="/" element={<Login />} />
-      <Route path="/register" element={<Register />} />
 
 
       {/* 📊 DASHBOARD */}
@@ -73,16 +70,6 @@ function App() {
         }
       />
 
-      {/* 📟 API PANEL */}
-      <Route
-        path="/api-panel"
-        element={
-          <ProtectedRoute>
-            <ApiPanel />
-          </ProtectedRoute>
-        }
-      />
-
       {/* 📜 MANTENIMIENTOS */}
       <Route
         path="/mantenimientos"
@@ -92,7 +79,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
 
     </Routes>
   );
