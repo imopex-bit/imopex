@@ -35,12 +35,36 @@ export default function Index() {
     if (!token) navigate("/");
   }, [navigate]);
 
+  // Métricas dinámicas
+  const stats = useMemo(() => {
+    const total = todas.length;
+    const funcionales = todas.filter(m => m.estado === "funcional").length;
+    const fallidas = todas.filter(m => m.estado === "no funcional").length;
+    const disponibilidad = total > 0 ? ((funcionales / total) * 100).toFixed(1) : 0;
+    
+    return {
+      total,
+      disponibilidad,
+      alertas: fallidas
+    };
+  }, [todas]);
+
+  const [mantHoy, setMantHoy] = useState(0);
+
   const cargar = async () => {
     setCargando(true);
     try {
-      const res = await api.get("/maquinas");
-      if (Array.isArray(res)) {
-        setTodas(res);
+      const [resMaquinas, resMant] = await Promise.all([
+        api.get("/maquinas"),
+        api.get("/mantenimiento").catch(() => []) // Evitar que falle si no hay mantenimientos
+      ]);
+
+      if (Array.isArray(resMaquinas)) setTodas(resMaquinas);
+      
+      if (Array.isArray(resMant)) {
+        const hoy = new Date().toISOString().split("T")[0];
+        const count = resMant.filter(m => String(m.fecha).startsWith(hoy)).length;
+        setMantHoy(count);
       }
     } catch (err) {
       console.error(err);
@@ -117,6 +141,7 @@ export default function Index() {
   const estados = ["funcional", "no funcional"];
   const localidades = [...new Set(todas.map(m => m.localidad))].filter(Boolean);
 
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
       
@@ -153,36 +178,47 @@ export default function Index() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p className="text-slate-500 text-sm font-medium">Total Máquinas</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">{todas.length}</h3>
-              <span className="text-green-500 text-sm font-bold bg-green-50 px-2 py-1 rounded-lg">+12%</span>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-sm font-medium">Disponibilidad Promedio</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">94.2%</h3>
-              <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 w-[94%]" />
+              <h3 className="text-4xl font-bold text-slate-900">{stats.total}</h3>
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                <Settings size={20} />
               </div>
             </div>
           </motion.div>
+          
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <p className="text-slate-500 text-sm font-medium">Disponibilidad Promedio</p>
+            <div className="flex items-end justify-between mt-2">
+              <h3 className="text-4xl font-bold text-slate-900">{stats.disponibilidad}%</h3>
+              <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-1000" 
+                  style={{ width: `${stats.disponibilidad}%` }} 
+                />
+              </div>
+            </div>
+          </motion.div>
+
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p className="text-slate-500 text-sm font-medium">Mantenimientos Hoy</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">3</h3>
+              <h3 className="text-4xl font-bold text-slate-900">{mantHoy}</h3>
               <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
                 <History size={20} />
               </div>
             </div>
           </motion.div>
+
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p className="text-slate-500 text-sm font-medium">Alertas Activas</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">2</h3>
-              <span className="text-red-500 text-sm font-bold animate-pulse">● Crítico</span>
+              <h3 className="text-4xl font-bold text-slate-900">{stats.alertas}</h3>
+              <span className={`text-sm font-bold flex items-center gap-1 ${stats.alertas > 0 ? "text-red-500 animate-pulse" : "text-emerald-500"}`}>
+                ● {stats.alertas > 0 ? "Crítico" : "Normal"}
+              </span>
             </div>
           </motion.div>
         </section>
+
 
         {/* CHARTS SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
