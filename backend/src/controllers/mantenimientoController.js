@@ -37,31 +37,41 @@ export const crearMantenimiento = async (req, res) => {
   const { descripcion, maquinas_id, usuarios_id } = req.body;
 
   try {
-    const { data: mant } = await supabase
+    // 1. Insertar el mantenimiento
+    const { data: mant, error: mantError } = await supabase
       .from("mantenimiento")
       .insert([{
         descripcion,
         maquinas_id,
         fecha: new Date()
       }])
-      .select()
+      .select("id")
       .single();
 
-    const relaciones = usuarios_id.map(uid => ({
-      mantenimiento_id: mant.id,
-      usuarios_id: uid
-    }));
+    if (mantError) throw mantError;
 
-    await supabase
-      .from("mantenimiento_usuarios")
-      .insert(relaciones);
+    // 2. Relacionar con los técnicos (mantenimiento_usuarios)
+    if (usuarios_id && usuarios_id.length > 0) {
+      const relaciones = usuarios_id.map(uid => ({
+        mantenimiento_id: mant.id,
+        usuarios_id: uid
+      }));
 
-    res.json({ message: "Mantenimiento creado ✅" });
+      const { error: relError } = await supabase
+        .from("mantenimiento_usuarios")
+        .insert(relaciones);
+
+      if (relError) throw relError;
+    }
+
+    res.json({ message: "Mantenimiento registrado con éxito ✅", id: mant.id });
 
   } catch (err) {
+    console.error("ERROR CREAR MANTENIMIENTO:", err);
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // 🗑️ ELIMINAR
 export const eliminarMantenimiento = async (req, res) => {
