@@ -294,7 +294,7 @@ export default function Index() {
                   <tr key={m.id} className="hover:bg-slate-50/80 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-900">{m.codigo}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">{m.id.slice(0, 8)}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">{String(m.id).slice(0, 8)}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-slate-600 text-xs">S/N: {m.serial_maquina || "N/A"}</div>
