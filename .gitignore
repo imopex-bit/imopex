@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+
+# Archivos de entorno (Secretos)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Compilados de Frontend (Vite/React)
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# Compilados de Escritorio (Electron)
+frontend/release/
+frontend/dist-electron/
+frontend/out/
+
+# SO y Editores
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

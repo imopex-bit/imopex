@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { LogIn, Mail, Lock, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "../api";
+import logo from "../assets/logo.webp";
 
 function Login() {
   const navigate = useNavigate();
@@ -10,6 +11,14 @@ function Login() {
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Auto-login si ya existe un token
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -40,8 +49,8 @@ function Login() {
         className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
       >
         <div className="bg-blue-600 p-8 text-white text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <Activity size={32} />
+          <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
+            <img src={logo} alt="Imopex Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold">Imopex</h1>
           <p className="text-blue-100 text-sm mt-1">Gestión de Flota y Mantenimiento</p>
