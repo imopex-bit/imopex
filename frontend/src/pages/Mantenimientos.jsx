@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { History, Calendar, User, Wrench, ChevronLeft, Search, RefreshCcw, AlertCircle, Plus } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "../api";
+import ModalCrearMantenimiento from "../components/ModalCrearMantenimiento";
 
 export default function Mantenimientos() {
   const [mantenimientos, setMantenimientos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [error, setError] = useState(null);
+  const [showCrearModal, setShowCrearModal] = useState(false);
 
   const cargar = async () => {
     setCargando(true);
@@ -81,13 +83,13 @@ export default function Mantenimientos() {
             >
               <RefreshCcw size={18} className={cargando ? "animate-spin text-blue-400" : ""} />
             </button>
-            <Link 
-              to="/dashboard"
+            <button 
+              onClick={() => setShowCrearModal(true)}
               className="px-5 py-2.5 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition flex items-center gap-2 text-sm"
             >
               <Plus size={18} />
               <span className="hidden sm:inline">Nueva Intervención</span>
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -182,6 +184,15 @@ export default function Mantenimientos() {
         </div>
       </div>
       <p className="text-center mt-12 text-slate-500 text-xs relative z-10 font-bold tracking-wide">© {new Date().getFullYear()} Imopex Cloud • Panel de Mantenimiento</p>
+      
+      <AnimatePresence>
+        {showCrearModal && (
+          <ModalCrearMantenimiento 
+            onClose={() => setShowCrearModal(false)}
+            onCreated={cargar}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

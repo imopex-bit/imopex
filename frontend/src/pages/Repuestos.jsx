@@ -29,6 +29,7 @@ export default function Repuestos() {
   const [currentSelectedRepuesto, setCurrentSelectedRepuesto] = useState("");
   const [currentCantidad, setCurrentCantidad] = useState(1);
   const [currentObservacion, setCurrentObservacion] = useState("");
+  const [currentMotivo, setCurrentMotivo] = useState("normal"); // normal, defectuoso, devolucion
 
   const [formData, setFormData] = useState({
     codigo: "", nombre: "", categoria: "", stock_actual: 0, stock_minimo: 0, descripcion: ""
@@ -91,11 +92,13 @@ export default function Repuestos() {
       nombre: rep.nombre,
       codigo: rep.codigo,
       cantidad: currentCantidad,
-      observacion: currentObservacion
+      observacion: currentObservacion,
+      motivo: currentMotivo
     }]);
     setCurrentSelectedRepuesto("");
     setCurrentCantidad(1);
     setCurrentObservacion("");
+    setCurrentMotivo("normal");
   };
 
   const handleMovSubmit = async (e) => {
@@ -218,6 +221,49 @@ export default function Repuestos() {
           </div>
         </div>
 
+        {/* 📊 INDICADORES DE BODEGA */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-slate-800/30 backdrop-blur-md rounded-[1.5rem] border border-slate-700/40 p-5 flex items-center gap-4 shadow-lg">
+            <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400"><Package size={24} /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Ítems</p>
+              <h3 className="text-xl font-black text-white">{repuestos.length}</h3>
+            </div>
+          </div>
+          <div className="bg-slate-800/30 backdrop-blur-md rounded-[1.5rem] border border-slate-700/40 p-5 flex items-center gap-4 shadow-lg">
+            <div className="p-3 bg-amber-500/10 rounded-xl text-amber-400"><AlertTriangle size={24} /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Stock Crítico</p>
+              <h3 className="text-xl font-black text-white">{repuestos.filter(r => (r.stock_actual || 0) <= (r.stock_minimo || 0) && (r.stock_actual || 0) > 0).length}</h3>
+            </div>
+          </div>
+          <div className="bg-slate-800/30 backdrop-blur-md rounded-[1.5rem] border border-slate-700/40 p-5 flex items-center gap-4 shadow-lg">
+            <div className="p-3 bg-rose-500/10 rounded-xl text-rose-400"><X size={24} /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Agotados</p>
+              <h3 className="text-xl font-black text-white">{repuestos.filter(r => (r.stock_actual || 0) === 0).length}</h3>
+            </div>
+          </div>
+          <div className="bg-slate-800/30 backdrop-blur-md rounded-[1.5rem] border border-slate-700/40 p-5 flex items-center gap-4 shadow-lg">
+            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><Layers size={24} /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Categorías</p>
+              <h3 className="text-xl font-black text-white">{new Set(repuestos.map(r => r.categoria)).size}</h3>
+            </div>
+          </div>
+          <div className="bg-slate-800/30 backdrop-blur-md rounded-[1.5rem] border border-slate-700/40 p-5 flex items-center gap-4 shadow-lg">
+            <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><History size={24} /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Uso (7d)</p>
+              <h3 className="text-xl font-black text-white">
+                {movimientos
+                  .filter(m => m.tipo_movimiento === 'salida' && (new Date() - new Date(m.fecha)) / (1000 * 60 * 60 * 24) <= 7)
+                  .reduce((acc, m) => acc + (m.cantidad || 0), 0)}
+              </h3>
+            </div>
+          </div>
+        </div>
+
         {activeTab === "inventario" ? (
           <div className="space-y-6">
             <div className="relative group max-w-md">
@@ -227,34 +273,56 @@ export default function Repuestos() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <AnimatePresence>
-                {filteredRepuestos.map(r => (
-                  <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={r.id} className="bg-slate-800/30 backdrop-blur-sm rounded-[2rem] border border-slate-700/40 p-6 flex flex-col justify-between hover:border-slate-600 transition-all shadow-lg hover:shadow-2xl">
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-500/20 uppercase tracking-widest">{r.codigo}</span>
-                        <div className="flex gap-1">
-                          <button onClick={() => { setEditMode(true); setCurrentId(r.id); setFormData(r); setShowModal(true); }} className="p-2 hover:bg-slate-700 rounded-lg text-slate-500 hover:text-white transition-all"><Edit3 size={16} /></button>
-                          <button onClick={() => handleEliminarRepuesto(r.id)} className="p-2 hover:bg-rose-900/30 rounded-lg text-slate-500 hover:text-rose-400 transition-all"><Trash2 size={16} /></button>
+                {filteredRepuestos.map(r => {
+                  const stockLevel = (r.stock_actual / (r.stock_minimo * 2)) * 100;
+                  const isLow = r.stock_actual <= r.stock_minimo;
+                  const isOut = r.stock_actual === 0;
+
+                  return (
+                    <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={r.id} className="bg-slate-800/30 backdrop-blur-sm rounded-[2rem] border border-slate-700/40 p-6 flex flex-col justify-between hover:border-slate-600 transition-all shadow-lg hover:shadow-2xl group/card">
+                      <div>
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] font-black rounded-lg border border-indigo-500/20 uppercase tracking-tighter">{r.codigo}</span>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest ml-1">{r.categoria || "Sin Categoría"}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <button onClick={() => { setEditMode(true); setCurrentId(r.id); setFormData(r); setShowModal(true); }} className="p-2 hover:bg-slate-700 rounded-lg text-slate-500 hover:text-white transition-all opacity-0 group-hover/card:opacity-100"><Edit3 size={14} /></button>
+                            <button onClick={() => handleEliminarRepuesto(r.id)} className="p-2 hover:bg-rose-900/30 rounded-lg text-slate-500 hover:text-rose-400 transition-all opacity-0 group-hover/card:opacity-100"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+
+                        <h3 className="text-xl font-black text-white mb-6 group-hover/card:text-indigo-300 transition-colors">{r.nombre}</h3>
+                        
+                        {/* Visual Stock Indicator */}
+                        <div className="space-y-3 mb-8">
+                          <div className="flex justify-between items-end">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Disponibilidad</span>
+                            <span className={`text-sm font-black ${isOut ? "text-rose-400" : isLow ? "text-amber-400" : "text-emerald-400"}`}>
+                              {r.stock_actual} <span className="text-[10px] text-slate-600 font-bold">/ Mín {r.stock_minimo}</span>
+                            </span>
+                          </div>
+                          <div className="h-2 bg-slate-900/50 rounded-full overflow-hidden border border-slate-700/30 p-[2px]">
+                            <motion.div 
+                              initial={{ width: 0 }} 
+                              animate={{ width: `${Math.min(Math.max(stockLevel, 5), 100)}%` }}
+                              className={`h-full rounded-full ${isOut ? "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]" : isLow ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]" : "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"}`}
+                            />
+                          </div>
                         </div>
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-4 line-clamp-1">{r.nombre}</h3>
-                      <div className="grid grid-cols-2 gap-3 mb-6">
-                        <div className="bg-slate-900/50 p-3 rounded-2xl text-center border border-slate-700/30 shadow-inner">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Stock</p>
-                          <p className={`text-xl font-black ${r.stock_actual <= r.stock_minimo ? "text-amber-400" : "text-emerald-400"}`}>{r.stock_actual}</p>
-                        </div>
-                        <div className="bg-slate-900/50 p-3 rounded-2xl text-center border border-slate-700/30 shadow-inner">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Mínimo</p>
-                          <p className="text-xl font-black text-slate-300">{r.stock_minimo}</p>
-                        </div>
+
+                      <div className="flex gap-2">
+                        <button onClick={() => { setMovType("entrada"); setListaMovimientos([{ repuesto_id: r.id, nombre: r.nombre, codigo: r.codigo, cantidad: 1, observacion: "" }]); setShowMovModal(true); }} className="flex-1 py-3 bg-slate-800/50 hover:bg-emerald-500/10 text-slate-400 hover:text-emerald-400 rounded-xl border border-slate-700/50 hover:border-emerald-500/30 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2">
+                          <Plus size={14}/> Entrada
+                        </button>
+                        <button onClick={() => { setMovType("salida"); setListaMovimientos([{ repuesto_id: r.id, nombre: r.nombre, codigo: r.codigo, cantidad: 1, observacion: "" }]); setShowMovModal(true); }} className="flex-1 py-3 bg-slate-800/50 hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 rounded-xl border border-slate-700/50 hover:border-blue-500/30 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2">
+                          <ArrowRight size={14}/> Salida
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { setMovType("entrada"); setListaMovimientos([{ repuesto_id: r.id, nombre: r.nombre, codigo: r.codigo, cantidad: 1, observacion: "" }]); setShowMovModal(true); }} className="flex-1 py-3 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 text-[10px] font-black uppercase transition-all">Entrada</button>
-                      <button onClick={() => { setMovType("salida"); setListaMovimientos([{ repuesto_id: r.id, nombre: r.nombre, codigo: r.codigo, cantidad: 1, observacion: "" }]); setShowMovModal(true); }} className="flex-1 py-3 bg-blue-500/5 hover:bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 text-[10px] font-black uppercase transition-all">Salida</button>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           </div>
@@ -278,7 +346,14 @@ export default function Repuestos() {
                       <td className="p-5 text-xs text-slate-400 font-bold">{new Date(m.fecha).toLocaleString()}</td>
                       <td className="p-5 font-bold text-white text-sm">{m.repuestos?.nombre} <span className="text-[10px] text-slate-500 block font-normal">{m.repuestos?.codigo}</span></td>
                       <td className="p-5">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${m.tipo_movimiento === 'entrada' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{m.tipo_movimiento}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase w-fit ${m.tipo_movimiento === 'entrada' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{m.tipo_movimiento}</span>
+                          {m.observacion?.includes("[DEFECTUOSO]") && (
+                            <span className="px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded text-[8px] font-black uppercase w-fit flex items-center gap-1">
+                              <AlertTriangle size={8}/> Defectuoso
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-5 text-center font-black text-lg">{m.cantidad}</td>
                       <td className="p-5 text-xs">
@@ -401,6 +476,18 @@ export default function Repuestos() {
                     <input type="number" placeholder="Cant" className="w-20 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white text-sm font-black" value={currentCantidad} onChange={e => setCurrentCantidad(parseInt(e.target.value)||1)} />
                     <input placeholder="Nota..." className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white text-xs" value={currentObservacion} onChange={e => setCurrentObservacion(e.target.value)} />
                   </div>
+                  
+                  {movType === "salida" && (
+                    <div className="space-y-2">
+                      <label className="block text-[9px] font-black text-slate-500 uppercase ml-1">Estado del Repuesto al Salir</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button type="button" onClick={() => setCurrentMotivo("normal")} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${currentMotivo === 'normal' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>USO NORMAL</button>
+                        <button type="button" onClick={() => setCurrentMotivo("defectuoso")} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${currentMotivo === 'defectuoso' ? 'bg-rose-600 border-rose-500 text-white animate-pulse' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>DEFECTUOSO</button>
+                        <button type="button" onClick={() => setCurrentMotivo("devolucion")} className={`py-2 rounded-lg text-[9px] font-black border transition-all ${currentMotivo === 'devolucion' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>DEVOLUCIÓN</button>
+                      </div>
+                    </div>
+                  )}
+
                   <button onClick={agregarALista} className="w-full py-4 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-2xl font-black text-[10px] uppercase tracking-widest">Añadir a la Carga</button>
                 </div>
               </div>
