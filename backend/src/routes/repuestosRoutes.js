@@ -6,6 +6,7 @@ import {
   eliminarRepuesto, 
   asignarMasivo, 
   getMovimientos,
+  revertMovimiento,
   importRepuestos
 } from "../controllers/repuestosController.js";
 
@@ -20,6 +21,7 @@ router.delete("/:id", eliminarRepuesto);
 router.post("/masivo", asignarMasivo);
 
 router.get("/movimientos", getMovimientos);
+router.delete("/movimientos/:id", revertMovimiento);
 router.post("/import", importRepuestos);
 
 export default router;

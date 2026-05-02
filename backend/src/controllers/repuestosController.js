@@ -185,7 +185,53 @@ export const importRepuestos = async (req, res) => {
       if (repuestoFinal) resultados.push(repuestoFinal);
     }
 
-    res.json({ message: `${resultados.length} repuestos procesados (Stock sumado) ✅`, data: resultados });
+// 🔄 REVERTIR MOVIMIENTO (DESHACER ACCIÓN)
+export const revertMovimiento = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Obtener el movimiento para saber qué estamos revirtiendo
+    const { data: mov, error: errMov } = await supabase
+      .from("movimientos_repuestos")
+      .select("*, repuestos(stock_actual)")
+      .eq("id", id)
+      .single();
+
+    if (errMov || !mov) return res.status(404).json({ error: "Movimiento no encontrado" });
+
+    const repuestoId = mov.repuesto_id;
+    const cantidad = mov.cantidad;
+    const stockActual = mov.repuestos.stock_actual;
+    let nuevoStock = stockActual;
+
+    // 2. Calcular el stock inverso
+    if (mov.tipo_movimiento === "entrada") {
+      nuevoStock = stockActual - cantidad; // Si entró, ahora lo quitamos
+    } else if (mov.tipo_movimiento === "salida") {
+      nuevoStock = stockActual + cantidad; // Si salió, ahora lo devolvemos
+    }
+
+    if (nuevoStock < 0) {
+      return res.status(400).json({ error: "No se puede revertir: el stock quedaría en negativo." });
+    }
+
+    // 3. Actualizar el stock del repuesto
+    const { error: errUpdate } = await supabase
+      .from("repuestos")
+      .update({ stock_actual: nuevoStock })
+      .eq("id", repuestoId);
+
+    if (errUpdate) throw errUpdate;
+
+    // 4. Borrar el movimiento
+    const { error: errDelete } = await supabase
+      .from("movimientos_repuestos")
+      .delete()
+      .eq("id", id);
+
+    if (errDelete) throw errDelete;
+
+    res.json({ message: "Acción revertida y stock ajustado ✅", nuevoStock });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

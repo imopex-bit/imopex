@@ -121,6 +121,29 @@ export default function Repuestos() {
     }
   };
 
+  const handleEliminarRepuesto = async (id) => {
+    if (!window.confirm("¿Estás seguro de eliminar este repuesto? Se borrarán todos sus datos.")) return;
+    try {
+      await api.delete(`/repuestos/${id}`);
+      cargar();
+      alert("Repuesto eliminado ✅");
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  const handleRevertirMovimiento = async (id) => {
+    if (!window.confirm("¿Deseas deshacer esta acción? El stock se ajustará automáticamente.")) return;
+    try {
+      await api.delete(`/repuestos/movimientos/${id}`);
+      cargarMovimientos();
+      cargar(); // Actualizar stock en la otra pestaña
+      alert("Acción revertida con éxito ✅");
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -211,6 +234,7 @@ export default function Repuestos() {
                         <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-500/20 uppercase tracking-widest">{r.codigo}</span>
                         <div className="flex gap-1">
                           <button onClick={() => { setEditMode(true); setCurrentId(r.id); setFormData(r); setShowModal(true); }} className="p-2 hover:bg-slate-700 rounded-lg text-slate-500 hover:text-white transition-all"><Edit3 size={16} /></button>
+                          <button onClick={() => handleEliminarRepuesto(r.id)} className="p-2 hover:bg-rose-900/30 rounded-lg text-slate-500 hover:text-rose-400 transition-all"><Trash2 size={16} /></button>
                         </div>
                       </div>
                       <h3 className="text-lg font-bold text-white mb-4 line-clamp-1">{r.nombre}</h3>
@@ -245,6 +269,7 @@ export default function Repuestos() {
                     <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo</th>
                     <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Cant</th>
                     <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Máquina / Destino</th>
+                    <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/20">
@@ -259,6 +284,11 @@ export default function Repuestos() {
                       <td className="p-5 text-xs">
                         {m.maquinas ? <div className="text-indigo-400 font-black flex items-center gap-1"><Wrench size={10}/> MÁQ: {m.maquinas.codigo}</div> : <div className="text-slate-600">N/A</div>}
                         <div className="text-slate-500 italic mt-1">{m.observacion}</div>
+                      </td>
+                      <td className="p-5 text-right">
+                        <button onClick={() => handleRevertirMovimiento(m.id)} className="p-2 hover:bg-rose-900/30 rounded-lg text-slate-500 hover:text-rose-400 transition-all group-hover:scale-110 shadow-lg" title="Deshacer Movimiento">
+                          <History size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
