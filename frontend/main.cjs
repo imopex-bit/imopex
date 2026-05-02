@@ -10,7 +10,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(__dirname, 'src', 'assets', 'logo.webp'),
+    icon: path.join(__dirname, 'dist', 'logo_empresa.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

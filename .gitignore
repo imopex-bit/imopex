@@ -4,6 +4,10 @@ node_modules/
 # Archivos de entorno (Secretos)
 .env
 .env.*
+**/.env
+**/.env.*
+*.tmp
+*.local
 !.env.example
 
 # Logs

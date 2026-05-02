@@ -7,7 +7,7 @@ export const getMantenimientos = async (req, res) => {
       .from("mantenimiento")
       .select(`
         *,
-        maquinas (codigo),
+        maquinas (codigo, serial_maquina, serial_billetero_1, serial_billetero_2),
         mantenimiento_usuarios (
           usuarios (nombre)
         )
@@ -19,7 +19,11 @@ export const getMantenimientos = async (req, res) => {
     // Formatear para que el frontend lo entienda fácilmente
     const resultado = mantenimientos.map(m => ({
       id: m.id,
+      maquina_id: m.maquinas_id,
       maquina_codigo: m.maquinas?.codigo || "N/A",
+      serial_maquina: m.maquinas?.serial_maquina || "N/A",
+      serial_billetero_1: m.maquinas?.serial_billetero_1 || "N/A",
+      serial_billetero_2: m.maquinas?.serial_billetero_2 || null,
       fecha: m.fecha,
       descripcion: m.descripcion,
       responsables: m.mantenimiento_usuarios?.map(mu => mu.usuarios?.nombre).filter(Boolean) || []

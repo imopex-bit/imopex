@@ -7,6 +7,8 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
   throw new Error("❌ Faltan variables de entorno");
 }
 
+console.log("🔌 Conectando a Supabase:", process.env.SUPABASE_URL);
+
 export const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY

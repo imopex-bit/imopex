@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import maquinasRoutes from "./routes/maquinasRoutes.js";
 import mantenimientoRoutes from "./routes/mantenimientoRoutes.js";
 import usuariosRoutes from "./routes/usuariosRoutes.js";
+import repuestosRoutes from "./routes/repuestosRoutes.js";
 
 const app = express();
 
@@ -52,5 +53,8 @@ app.use("/api/mantenimiento", mantenimientoRoutes);
 
 // 👤 USUARIOS
 app.use("/api/usuarios", usuariosRoutes);
+
+// 📦 REPUESTOS
+app.use("/api/repuestos", repuestosRoutes);
 
 export default app;

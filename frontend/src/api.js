@@ -1,4 +1,6 @@
-const API = "https://imopex.onrender.com/api";
+const API = window.location.hostname === "localhost" 
+  ? "http://localhost:3000/api" 
+  : "https://imopex.onrender.com/api";
 
 
 const getToken = () => localStorage.getItem("token");
@@ -18,6 +20,11 @@ const request = async (endpoint, options = {}) => {
 
     // 🔥 validar respuesta
     if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.clear();
+        window.location.href = "/";
+        return;
+      }
       const errorText = await res.text();
       throw new Error(errorText || "Error en la petición");
     }

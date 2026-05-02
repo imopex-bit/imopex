@@ -63,9 +63,21 @@ export const getMaquinaDetalle = async (req, res) => {
       })
     );
 
+    // 🛠️ REPUESTOS USADOS EN ESTA MÁQUINA (Historial de movimientos)
+    const { data: repuestosUsados } = await supabase
+      .from("movimientos_repuestos")
+      .select(`
+        *,
+        repuestos (nombre, codigo)
+      `)
+      .eq("maquina_id", id)
+      .eq("tipo_movimiento", "salida") // Solo las salidas cuentan como "usados"
+      .order("fecha", { ascending: false });
+
     res.json({
       ...maquina,
-      mantenimientos: resultado
+      mantenimientos: resultado,
+      repuestos: repuestosUsados || []
     });
 
   } catch (err) {
@@ -93,12 +105,19 @@ export const crearMaquina = async (req, res) => {
 // ✏️ EDITAR
 export const editarMaquina = async (req, res) => {
   const { id } = req.params;
-  const { estado, localidad, descripcion } = req.body;
+  const { estado, localidad, descripcion, serial_maquina, serial_billetero_1, serial_billetero_2 } = req.body;
 
   try {
     const { data, error } = await supabase
       .from("maquinas")
-      .update({ estado, localidad, descripcion})
+      .update({ 
+        estado, 
+        localidad, 
+        descripcion, 
+        serial_maquina, 
+        serial_billetero_1, 
+        serial_billetero_2 
+      })
       .eq("id", id)
       .select();
 
@@ -141,22 +160,32 @@ export const eliminarMaquina = async (req, res) => {
 // 📥 IMPORTAR
 export const importMaquinas = async (req, res) => {
   try {
-    const maquinas = req.body; // Array de máquinas
+    const maquinas = req.body;
+    if (!Array.isArray(maquinas)) return res.status(400).json({ error: "Formato inválido" });
 
-    if (!Array.isArray(maquinas)) {
-      return res.status(400).json({ error: "Se esperaba un array de máquinas" });
-    }
+    // Filtrar solo campos válidos de la tabla máquinas
+    const permitidos = [
+      "codigo", "tipo_maquina", "estado", "localidad", 
+      "descripcion", "serial_maquina", "serial_billetero_1", "serial_billetero_2"
+    ];
+
+    const maquinasLimpias = maquinas.map(m => {
+      const limpio = {};
+      permitidos.forEach(p => {
+        if (m[p] !== undefined) limpio[p] = m[p];
+      });
+      return limpio;
+    });
 
     const { data, error } = await supabase
       .from("maquinas")
-      .insert(maquinas)
+      .upsert(maquinasLimpias, { onConflict: 'codigo' })
       .select();
 
     if (error) throw error;
-
-    res.json({ message: `${data.length} máquinas importadas con éxito ✅`, data });
+    res.json({ message: `${data.length} máquinas procesadas ✅`, data });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-};
+};

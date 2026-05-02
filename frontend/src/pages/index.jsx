@@ -8,8 +8,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import ModalMaquina from "../components/ModalMaquina";
 import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
-import { StatusDonutChart, LocationBarChart, AvailabilityBarChart } from "../components/DashboardCharts";
+import { StatusDonutChart } from "../components/DashboardCharts";
 import api from "../api";
+import logo from "../assets/logo.webp";
 
 export default function Index() {
   const [todas, setTodas] = useState([]);
@@ -123,19 +124,7 @@ export default function Index() {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [todas]);
 
-  const dataLocation = useMemo(() => {
-    const counts = {};
-    todas.forEach(m => counts[m.localidad] = (counts[m.localidad] || 0) + 1);
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [todas]);
 
-  const dataAvailability = useMemo(() => {
-    // Demo data for availability
-    return todas.slice(0, 5).map(m => ({
-      name: m.codigo,
-      availability: m.estado === "funcional" ? 95 + Math.random() * 5 : 40 + Math.random() * 20
-    }));
-  }, [todas]);
 
   const tipos = [...new Set(todas.map(m => m.tipo_maquina))].filter(Boolean);
   const estados = ["funcional", "no funcional"];
@@ -143,267 +132,277 @@ export default function Index() {
 
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans relative overflow-hidden">
       
-      {/* SIDEBAR / NAVBAR (Simplified) */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-600 p-2 rounded-lg text-white">
-                <Activity size={24} />
-              </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                Imopex
-              </span>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              <Link to="/dashboard" className="text-blue-600 font-medium">Dashboard</Link>
-              <Link to="/mantenimientos" className="text-slate-500 hover:text-blue-600 transition">Mantenimientos</Link>
-              <Link to="/importar" className="text-slate-500 hover:text-blue-600 transition">Importar</Link>
-            </div>
+      {/* Background ambient gradients */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[150px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/10 blur-[150px] rounded-full pointer-events-none"></div>
 
-            <button onClick={logout} className="flex items-center gap-2 text-slate-500 hover:text-red-600 transition">
-              <LogOut size={20} />
-              <span className="hidden sm:inline">Salir</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-        
-        {/* DASHBOARD HERO */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-sm font-medium">Total Máquinas</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">{stats.total}</h3>
-              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                <Settings size={20} />
-              </div>
-            </div>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-sm font-medium">Disponibilidad Promedio</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">{stats.disponibilidad}%</h3>
-              <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden mb-2">
-                <div 
-                  className="h-full bg-emerald-500 transition-all duration-1000" 
-                  style={{ width: `${stats.disponibilidad}%` }} 
-                />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-sm font-medium">Mantenimientos Hoy</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">{mantHoy}</h3>
-              <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
-                <History size={20} />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-sm font-medium">Alertas Activas</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-4xl font-bold text-slate-900">{stats.alertas}</h3>
-              <span className={`text-sm font-bold flex items-center gap-1 ${stats.alertas > 0 ? "text-red-500 animate-pulse" : "text-emerald-500"}`}>
-                ● {stats.alertas > 0 ? "Crítico" : "Normal"}
-              </span>
-            </div>
-          </motion.div>
-        </section>
-
-
-        {/* CHARTS SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
-            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1 h-6 bg-blue-600 rounded-full" />
-              Estado de Flota
-            </h4>
-            <StatusDonutChart data={dataStatus} />
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
-            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1 h-6 bg-indigo-600 rounded-full" />
-              Distribución Geográfica
-            </h4>
-            <LocationBarChart data={dataLocation} />
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
-            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1 h-6 bg-emerald-600 rounded-full" />
-              Disponibilidad por Máquina
-            </h4>
-            <AvailabilityBarChart data={dataAvailability} />
-          </div>
-        </section>
-
-        {/* MAIN TABLE SECTION */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <h2 className="text-2xl font-bold text-slate-800">Inventario de Máquinas</h2>
+      <div className="relative z-10 h-full flex flex-col">
+        {/* NAVBAR GLASSMORPHIC */}
+        <nav className="bg-slate-900/60 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-50 shadow-lg shadow-slate-900/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
               <div className="flex items-center gap-3">
-                <Link to="/importar" className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition text-sm font-semibold">
-                  <Download size={18} />
-                  Importar
-                </Link>
-                <button 
-                  onClick={() => setCreando(true)}
-                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 text-sm font-bold"
-                >
-                  <Plus size={18} />
-                  Nueva Máquina
-                </button>
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <img src={logo} alt="Imopex Logo" className="w-[85%] h-[85%] object-contain relative z-10" />
+                </div>
+                <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">
+                  Imopex
+                </span>
               </div>
-            </div>
+              <div className="hidden md:flex items-center gap-6">
+                <Link to="/dashboard" className="text-indigo-400 font-bold border-b-2 border-indigo-500 pb-1 mt-1">Dashboard</Link>
+                <Link to="/mantenimientos" className="text-slate-400 hover:text-indigo-300 font-medium transition-colors mt-1">Mantenimientos</Link>
+                <Link to="/repuestos" className="text-slate-400 hover:text-indigo-300 font-medium transition-colors mt-1">Repuestos</Link>
+                <Link to="/importar" className="text-slate-400 hover:text-indigo-300 font-medium transition-colors mt-1">Importar</Link>
+              </div>
 
-            {/* FILTERS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por código o serial..." 
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition text-sm"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl">
-                <Filter size={18} className="text-slate-400" />
-                <select 
-                  className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                  value={filtroTipo}
-                  onChange={(e) => setFiltroTipo(e.target.value)}
-                >
-                  <option value="">Todos los Tipos</option>
-                  {tipos.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl">
-                <Activity size={18} className="text-slate-400" />
-                <select 
-                  className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
-                >
-                  <option value="">Todos los Estados</option>
-                  {estados.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl">
-                <Settings size={18} className="text-slate-400" />
-                <select 
-                  className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                  value={filtroLocalidad}
-                  onChange={(e) => setFiltroLocalidad(e.target.value)}
-                >
-                  <option value="">Todas las Localidades</option>
-                  {localidades.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </div>
+              <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-700/50 rounded-xl transition-all shadow-sm">
+                <LogOut size={18} />
+                <span className="hidden sm:inline font-semibold text-sm">Cerrar Sesión</span>
+              </button>
             </div>
           </div>
+        </nav>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="bg-slate-50/50 text-slate-500 font-medium border-b border-slate-100">
-                  <th className="px-6 py-4">Código</th>
-                  <th className="px-6 py-4">Info Técnica</th>
-                  <th className="px-6 py-4">Tipo</th>
-                  <th className="px-6 py-4">Estado</th>
-                  <th className="px-6 py-4">Localidad</th>
-                  <th className="px-6 py-4 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {paginadas.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">{m.codigo}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">{String(m.id).slice(0, 8)}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-slate-600 text-xs">S/N: {m.serial_maquina || "N/A"}</div>
-                      <div className="text-slate-400 text-[11px]">Bill: {m.serial_billetero || "N/A"}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[11px] font-bold uppercase">
-                        {m.tipo_maquina}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                        ${m.estado === "funcional" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}
-                      `}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${m.estado === "funcional" ? "bg-emerald-500" : "bg-rose-500"}`} />
-                        {m.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 font-medium">
-                      {m.localidad}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setSeleccionada(m)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                          <Eye size={18} />
-                        </button>
-                        <button onClick={() => setEditando(m)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
-                          <Edit3 size={18} />
-                        </button>
-                        <button onClick={() => eliminar(m.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+        <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 flex-1 w-full">
+          
+          {/* DASHBOARD HERO STATS */}
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700/50 group hover:bg-slate-800/60 transition-colors">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Máquinas</p>
+              <div className="flex items-end justify-between mt-3">
+                <h3 className="text-4xl font-extrabold text-white">{stats.total}</h3>
+                <div className="p-2.5 bg-indigo-500/20 rounded-xl text-indigo-400 group-hover:scale-110 transition-transform">
+                  <Settings size={22} />
+                </div>
+              </div>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700/50 group hover:bg-slate-800/60 transition-colors">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Disponibilidad Media</p>
+              <div className="flex items-end justify-between mt-3">
+                <h3 className="text-4xl font-extrabold text-white">{stats.disponibilidad}%</h3>
+                <div className="h-2 w-24 bg-slate-700/50 rounded-full overflow-hidden mb-2 shadow-inner">
+                  <div 
+                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-1000" 
+                    style={{ width: `${stats.disponibilidad}%` }} 
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700/50 group hover:bg-slate-800/60 transition-colors">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Mantenimientos Hoy</p>
+              <div className="flex items-end justify-between mt-3">
+                <h3 className="text-4xl font-extrabold text-white">{mantHoy}</h3>
+                <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400 group-hover:scale-110 transition-transform">
+                  <History size={22} />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700/50 group hover:bg-slate-800/60 transition-colors">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Alertas Críticas</p>
+              <div className="flex items-end justify-between mt-3">
+                <h3 className="text-4xl font-extrabold text-white">{stats.alertas}</h3>
+                <span className={`text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-full ${stats.alertas > 0 ? "bg-rose-500/20 text-rose-400 animate-pulse border border-rose-500/30" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${stats.alertas > 0 ? "bg-rose-400" : "bg-emerald-400"}`}></span>
+                  {stats.alertas > 0 ? "Atención" : "Estable"}
+                </span>
+              </div>
+            </motion.div>
+          </section>
+
+
+          {/* CHARTS SECTION */}
+          <section className="grid grid-cols-1 lg:grid-cols-1 gap-6 max-w-xl mx-auto">
+            <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700/50">
+              <h4 className="text-slate-200 font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">
+                <div className="w-1.5 h-6 bg-gradient-to-b from-indigo-400 to-indigo-600 rounded-full" />
+                Estado de Flota
+              </h4>
+              <div className="opacity-90"><StatusDonutChart data={dataStatus} /></div>
+            </div>
+          </section>
+
+          {/* MAIN TABLE SECTION */}
+          <section className="bg-slate-800/40 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-700/50 space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 className="text-2xl font-extrabold text-white tracking-tight">Inventario Global</h2>
+                <div className="flex items-center gap-3">
+                  <Link to="/importar" className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700 rounded-xl transition-all text-sm font-semibold hover:-translate-y-0.5">
+                    <Download size={18} />
+                    Importar
+                  </Link>
+                  <button 
+                    onClick={() => setCreando(true)}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm font-bold hover:-translate-y-0.5 active:scale-95"
+                  >
+                    <Plus size={18} />
+                    Nueva Máquina
+                  </button>
+                </div>
+              </div>
+
+              {/* FILTERS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="relative group">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por código o serial..." 
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm text-white placeholder:text-slate-500 outline-none"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-slate-900/50 border border-slate-700 rounded-xl focus-within:border-indigo-500 transition-colors">
+                  <Filter size={18} className="text-slate-500 ml-1" />
+                  <select 
+                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-300 outline-none cursor-pointer py-1.5"
+                    value={filtroTipo}
+                    onChange={(e) => setFiltroTipo(e.target.value)}
+                  >
+                    <option value="" className="bg-slate-800">Todos los Tipos</option>
+                    {tipos.map(t => <option key={t} value={t} className="bg-slate-800">{t}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-slate-900/50 border border-slate-700 rounded-xl focus-within:border-indigo-500 transition-colors">
+                  <Activity size={18} className="text-slate-500 ml-1" />
+                  <select 
+                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-300 outline-none cursor-pointer py-1.5"
+                    value={filtroEstado}
+                    onChange={(e) => setFiltroEstado(e.target.value)}
+                  >
+                    <option value="" className="bg-slate-800">Todos los Estados</option>
+                    {estados.map(e => <option key={e} value={e} className="bg-slate-800">{e}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-slate-900/50 border border-slate-700 rounded-xl focus-within:border-indigo-500 transition-colors">
+                  <Settings size={18} className="text-slate-500 ml-1" />
+                  <select 
+                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-300 outline-none cursor-pointer py-1.5"
+                    value={filtroLocalidad}
+                    onChange={(e) => setFiltroLocalidad(e.target.value)}
+                  >
+                    <option value="" className="bg-slate-800">Todas las Localidades</option>
+                    {localidades.map(l => <option key={l} value={l} className="bg-slate-800">{l}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-700/50">
+                    <th className="px-6 py-5">Código / ID</th>
+                    <th className="px-6 py-5">Info Técnica</th>
+                    <th className="px-6 py-5">Tipo</th>
+                    <th className="px-6 py-5">Estado</th>
+                    <th className="px-6 py-5">Localidad</th>
+                    <th className="px-6 py-5 text-right">Gestión</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* PAGINATION */}
-          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Mostrando <span className="font-bold">{paginadas.length}</span> de <span className="font-bold">{maquinas.length}</span> resultados
-            </p>
-            <div className="flex items-center gap-2">
-              <button 
-                disabled={paginaActual === 1}
-                onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
-                className="p-2 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              {[...Array(totalPaginas)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPaginaActual(i + 1)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition ${paginaActual === i + 1 ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-200"}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button 
-                disabled={paginaActual === totalPaginas}
-                onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
-                className="p-2 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400"
-              >
-                <ChevronRight size={20} />
-              </button>
+                </thead>
+                <tbody className="divide-y divide-slate-700/50">
+                  {paginadas.map((m) => (
+                    <tr key={m.id} className="hover:bg-slate-700/30 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="font-extrabold text-white text-base">{m.codigo}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">#{String(m.id).slice(0, 8)}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-slate-300 text-xs flex items-center gap-2">
+                          <span className="text-slate-500">S/N:</span> <span className="font-mono">{m.serial_maquina || "N/A"}</span>
+                        </div>
+                        <div className="text-slate-400 text-[11px] mt-1 space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter w-5">B1:</span> 
+                            <span className="font-mono">{m.serial_billetero_1 || m.serial_billetero || "N/A"}</span>
+                          </div>
+                          {m.serial_billetero_2 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter w-5">B2:</span> 
+                              <span className="font-mono">{m.serial_billetero_2}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-md text-[11px] font-bold uppercase tracking-wider">
+                          {m.tipo_maquina}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
+                          ${m.estado === "funcional" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"}
+                        `}>
+                          <span className={`w-1.5 h-1.5 rounded-full shadow-sm ${m.estado === "funcional" ? "bg-emerald-400 shadow-emerald-500/50" : "bg-rose-400 shadow-rose-500/50"}`} />
+                          {m.estado}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300 font-medium">
+                        {m.localidad}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => setSeleccionada(m)} className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors" title="Ver Detalles">
+                            <Eye size={18} />
+                          </button>
+                          <button onClick={() => setEditando(m)} className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Editar">
+                            <Edit3 size={18} />
+                          </button>
+                          <button onClick={() => eliminar(m.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Eliminar">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </section>
-      </main>
+
+            {/* PAGINATION */}
+            <div className="px-6 py-4 bg-slate-900/40 border-t border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-slate-400 font-medium tracking-wide">
+                Mostrando <span className="text-white font-bold">{paginadas.length}</span> de <span className="text-white font-bold">{maquinas.length}</span> registros
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button 
+                  disabled={paginaActual === 1}
+                  onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                  className="p-2 text-slate-400 hover:text-indigo-400 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <div className="flex gap-1">
+                  {[...Array(totalPaginas)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPaginaActual(i + 1)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${paginaActual === i + 1 ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/30" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  disabled={paginaActual === totalPaginas}
+                  onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                  className="p-2 text-slate-400 hover:text-indigo-400 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
 
       {/* MODALES */}
       <AnimatePresence>
