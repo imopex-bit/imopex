@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // 📄 Páginas
 import Login from "./pages/login";
@@ -18,44 +19,47 @@ import Layout from "./components/Layout";
 
 function App() {
   return (
-    <Routes>
-      {/* 🔐 LOGIN */}
-      <Route path="/" element={<Login />} />
+    <>
+      <Routes>
+        {/* 🔐 LOGIN */}
+        <Route path="/" element={<Login />} />
 
-      {/* 🛡️ RUTAS PROTEGIDAS CON BARRA LATERAL (SIDEBAR) */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        {/* 📊 DASHBOARD */}
-        <Route path="/dashboard" element={<Index />} />
+        {/* 🛡️ RUTAS PROTEGIDAS CON BARRA LATERAL (SIDEBAR) */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          {/* 📊 DASHBOARD */}
+          <Route path="/dashboard" element={<Index />} />
 
-        {/* ➕ CREAR */}
-        <Route path="/crear" element={<CrearMaquina />} />
+          {/* ➕ CREAR */}
+          <Route path="/crear" element={<CrearMaquina />} />
 
-        {/* ✏️ EDITAR */}
-        <Route path="/editar/:id" element={<EditarMaquina />} />
+          {/* ✏️ EDITAR */}
+          <Route path="/editar/:id" element={<EditarMaquina />} />
 
-        {/* 🔍 DETALLE */}
-        <Route path="/maquina/:id" element={<MaquinaDetalle />} />
+          {/* 🔍 DETALLE */}
+          <Route path="/maquina/:id" element={<MaquinaDetalle />} />
 
-        {/* 📥 IMPORTAR */}
-        <Route path="/importar" element={<ImportarExcel />} />
+          {/* 📥 IMPORTAR */}
+          <Route path="/importar" element={<ImportarExcel />} />
 
-        {/* 📜 MANTENIMIENTOS */}
-        <Route path="/mantenimientos" element={<Mantenimientos />} />
-        
-        {/* 📦 REPUESTOS */}
-        <Route path="/repuestos" element={<Repuestos />} />
-        <Route path="/repuestos/historial" element={<HistorialRepuestos />} />
+          {/* 📜 MANTENIMIENTOS */}
+          <Route path="/mantenimientos" element={<Mantenimientos />} />
+          
+          {/* 📦 REPUESTOS */}
+          <Route path="/repuestos" element={<Repuestos />} />
+          <Route path="/repuestos/historial" element={<HistorialRepuestos />} />
 
-        {/* 👥 PERSONAL (TRABAJADORES) */}
-        <Route path="/personal" element={<Personal />} />
-      </Route>
-    </Routes>
+          {/* 👥 PERSONAL (TRABAJADORES) */}
+          <Route path="/personal" element={<Personal />} />
+        </Route>
+      </Routes>
+      <SpeedInsights />
+    </>
   );
 }
 
