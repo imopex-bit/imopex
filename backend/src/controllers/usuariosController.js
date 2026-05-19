@@ -4,7 +4,7 @@ export const getUsuarios = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("usuarios")
-      .select("id, nombre");
+      .select("*");
 
     if (error) throw error;
 

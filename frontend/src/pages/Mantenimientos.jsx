@@ -1,24 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { History, Calendar, User, Wrench, ChevronLeft, Search, RefreshCcw, AlertCircle, Plus } from "lucide-react";
+import { History, Calendar, User, Wrench, ChevronLeft, ChevronRight, Search, RefreshCcw, AlertCircle, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../api";
 import ModalCrearMantenimiento from "../components/ModalCrearMantenimiento";
 
 export default function Mantenimientos() {
-  const [mantenimientos, setMantenimientos] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [mantenimientos, setMantenimientos] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cache_mantenimientos")) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [cargando, setCargando] = useState(() => {
+    try {
+      const cache = localStorage.getItem("cache_mantenimientos");
+      return !cache;
+    } catch {
+      return true;
+    }
+  });
   const [busqueda, setBusqueda] = useState("");
   const [error, setError] = useState(null);
   const [showCrearModal, setShowCrearModal] = useState(false);
 
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 8;
+
   const cargar = async () => {
-    setCargando(true);
+    setCargando(mantenimientos.length === 0);
     setError(null);
     try {
       const res = await api.get("/mantenimiento");
       if (Array.isArray(res)) {
         setMantenimientos(res);
+        localStorage.setItem("cache_mantenimientos", JSON.stringify(res));
       } else {
         throw new Error("Respuesta inválida del servidor");
       }
@@ -30,31 +48,48 @@ export default function Mantenimientos() {
     }
   };
 
+  const agregarMantenimientoLocal = (nuevoMant) => {
+    setMantenimientos(prev => {
+      const nuevas = [nuevoMant, ...prev];
+      localStorage.setItem("cache_mantenimientos", JSON.stringify(nuevas));
+      return nuevas;
+    });
+    cargar(); // Recarga de fondo silenciosa para sincronizar con la base de datos
+  };
+
   useEffect(() => {
     cargar();
   }, []);
 
-  const filtrados = mantenimientos.filter(m => 
-    String(m.maquina_codigo || "").toLowerCase().includes(busqueda.toLowerCase()) ||
-    String(m.descripcion || "").toLowerCase().includes(busqueda.toLowerCase()) ||
-    m.responsables?.some(r => r.toLowerCase().includes(busqueda.toLowerCase()))
-  );
+  const filtrados = useMemo(() => {
+    return mantenimientos.filter(m => 
+      String(m.maquina_codigo || "").toLowerCase().includes(busqueda.toLowerCase()) ||
+      String(m.descripcion || "").toLowerCase().includes(busqueda.toLowerCase()) ||
+      m.responsables?.some(r => r.toLowerCase().includes(busqueda.toLowerCase()))
+    );
+  }, [mantenimientos, busqueda]);
+
+  const paginados = useMemo(() => {
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    return filtrados.slice(inicio, inicio + itemsPorPagina);
+  }, [filtrados, paginaActual]);
+
+  const totalPaginas = Math.ceil(filtrados.length / itemsPorPagina);
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans relative overflow-hidden p-4 sm:p-8">
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans relative overflow-hidden">
       
       {/* Background ambient gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[150px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/10 blur-[150px] rounded-full pointer-events-none"></div>
 
-      <div className="relative z-10 max-w-6xl mx-auto space-y-8">
-        
+      <div className="relative z-10 h-full flex flex-col">
+        <main className="max-w-6xl mx-auto p-4 sm:p-8 space-y-8 flex-1 w-full">
+          
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="p-2 bg-slate-800/50 backdrop-blur-md rounded-2xl shadow-sm border border-slate-700/50 hover:text-blue-400 text-slate-400 transition group">
-              <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-            </Link>
             <div>
+
               <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                 <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-600/20">
                   <History size={24} />
@@ -73,7 +108,7 @@ export default function Mantenimientos() {
                 placeholder="Buscar por código, descripción o técnico..." 
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-2xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm text-white placeholder:text-slate-500 outline-none shadow-sm"
                 value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
+                onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
               />
             </div>
             <button 
@@ -110,13 +145,13 @@ export default function Mantenimientos() {
               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
               <p className="text-slate-400 font-bold animate-pulse tracking-wide">Cargando historial...</p>
             </div>
-          ) : filtrados.length > 0 ? (
-            filtrados.map((m, i) => (
+          ) : paginados.length > 0 ? (
+            paginados.map((m, i) => (
               <motion.div 
                 key={m.id}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: Math.min(i, 4) * 0.04 }}
                 className="bg-slate-800/40 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-slate-700/50 flex flex-col md:flex-row gap-6 hover:bg-slate-800/60 hover:border-blue-500/30 transition-all group"
               >
                 <div className="flex-1 space-y-4">
@@ -130,8 +165,14 @@ export default function Mantenimientos() {
                         <div className="flex flex-col gap-0.5">
                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest font-mono">S/N: {m.serial_maquina}</p>
                           <div className="flex gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest font-mono">
-                            <span>B1: {m.serial_billetero_1}</span>
-                            {m.serial_billetero_2 && <span>B2: {m.serial_billetero_2}</span>}
+                            {!m.serial_billetero_2 ? (
+                              <span>Billetero: {m.serial_billetero_1 || m.serial_billetero || "N/A"}</span>
+                            ) : (
+                              <>
+                                <span>B1: {m.serial_billetero_1 || m.serial_billetero || "N/A"}</span>
+                                <span>B2: {m.serial_billetero_2}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -181,15 +222,52 @@ export default function Mantenimientos() {
               </Link>
             </motion.div>
           )}
+
+          {/* PAGINATION */}
+          {filtrados.length > itemsPorPagina && (
+            <div className="px-6 py-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-slate-400 font-medium tracking-wide">
+                Mostrando <span className="text-white font-bold">{paginados.length}</span> de <span className="text-white font-bold">{filtrados.length}</span> registros
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button 
+                  disabled={paginaActual === 1}
+                  onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                  className="p-2 text-slate-400 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <div className="flex gap-1">
+                  {[...Array(totalPaginas)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPaginaActual(i + 1)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${paginaActual === i + 1 ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  disabled={paginaActual === totalPaginas}
+                  onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                  className="p-2 text-slate-400 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+        </main>
       </div>
-      <p className="text-center mt-12 text-slate-500 text-xs relative z-10 font-bold tracking-wide">© {new Date().getFullYear()} Imopex Cloud • Panel de Mantenimiento</p>
+      <p className="text-center mt-12 mb-4 text-slate-500 text-xs relative z-10 font-bold tracking-wide">© {new Date().getFullYear()} Imopex Cloud • Panel de Mantenimiento</p>
       
       <AnimatePresence>
         {showCrearModal && (
           <ModalCrearMantenimiento 
             onClose={() => setShowCrearModal(false)}
-            onCreated={cargar}
+            onCreated={agregarMantenimientoLocal}
           />
         )}
       </AnimatePresence>

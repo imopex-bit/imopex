@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Save, AlertCircle } from "lucide-react";
 import api from "../api"; // ✅ IMPORT CORRECTO
+import { useAlert } from "../context/AlertContext";
 
 export default function CrearMaquina() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
 
   const [codigo, setCodigo] = useState("");
@@ -39,7 +41,7 @@ export default function CrearMaquina() {
 
       } catch (err) {
         console.log(err);
-        alert("Error cargando datos ❌");
+        showAlert("Error cargando datos", "error");
       }
     };
 
@@ -79,11 +81,12 @@ export default function CrearMaquina() {
         localidad: localidadFinal
       });
 
+      showAlert("Máquina creada exitosamente ✅", "success");
       navigate("/dashboard");
 
     } catch (err) {
       console.log(err);
-      alert("Error guardando ❌");
+      showAlert("Error guardando la máquina", "error");
     } finally {
       setLoading(false);
     }

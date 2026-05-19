@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Trash2, Plus, Search, Wrench, History as HistoryIcon, User, Calendar, Cpu, X, AlertTriangle, Package, ArrowRight, Save } from "lucide-react";
 import api from "../api"; // ✅ default import
+import { useAlert } from "../context/AlertContext";
 
 export default function MaquinaDetalle() {
+  const { showAlert, showConfirm } = useAlert();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -20,7 +22,6 @@ export default function MaquinaDetalle() {
   const [seleccionados, setSeleccionados] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // 🔹 cargar máquina
   const cargarMaquina = async () => {
@@ -30,7 +31,7 @@ export default function MaquinaDetalle() {
       setMaquina(res.data || res);
     } catch (err) {
       console.log(err);
-      alert("Error cargando máquina ❌");
+      showAlert("Error cargando máquina", "error");
     } finally {
       setLoading(false);
     }
@@ -43,7 +44,7 @@ export default function MaquinaDetalle() {
       setUsuarios(res.data || res);
     } catch (err) {
       console.log(err);
-      alert("Error cargando usuarios ❌");
+      showAlert("Error cargando usuarios", "error");
     }
   };
 
@@ -64,7 +65,7 @@ export default function MaquinaDetalle() {
 
   const handleAsignarRepuesto = async () => {
     if (!repuestoSeleccionado || cantidadRepuesto < 1) {
-      alert("Selecciona un repuesto y cantidad válida ❌");
+      showAlert("Selecciona un repuesto y cantidad válida", "warning");
       return;
     }
 
@@ -81,13 +82,13 @@ export default function MaquinaDetalle() {
         observacion: `Asignado a máquina ${maquina.codigo}`
       });
 
-      alert("Repuesto asignado correctamente ✅");
+      showAlert("Repuesto asignado correctamente ✅", "success");
       setRepuestoSeleccionado("");
       setCantidadRepuesto(1);
       cargarMaquina();
       cargarRepuestos();
     } catch (err) {
-      alert(err.response?.data?.error || "Error al asignar repuesto ❌");
+      showAlert(err.response?.data?.error || "Error al asignar repuesto", "error");
     }
   };
 
@@ -107,7 +108,7 @@ export default function MaquinaDetalle() {
     e.preventDefault();
 
     if (!descripcion.trim() || seleccionados.length === 0) {
-      alert("Faltan datos ❌");
+      showAlert("Faltan datos", "warning");
       return;
     }
 
@@ -126,18 +127,22 @@ export default function MaquinaDetalle() {
 
     } catch (err) {
       console.log(err);
-      alert("Error guardando ❌");
+      showAlert("Error guardando", "error");
     }
   };
 
   // 🗑️ eliminar máquina
-  const eliminarMaquina = async () => {
+  const handleEliminarMaquinaClick = async () => {
+    const isConfirmed = await showConfirm("Esta acción no se puede deshacer y borrará todo su historial.", "¿Eliminar máquina?");
+    if (!isConfirmed) return;
+
     try {
       await api.delete(`/maquinas/${id}`);
+      showAlert("Máquina eliminada", "success");
       navigate("/dashboard");
     } catch (err) {
       console.log(err);
-      alert("Error eliminando ❌");
+      showAlert("Error eliminando la máquina", "error");
     }
   };
 
@@ -181,7 +186,7 @@ export default function MaquinaDetalle() {
           </div>
 
           <button
-            onClick={() => setConfirmDelete(true)}
+            onClick={handleEliminarMaquinaClick}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-600/20 transition-all text-sm"
           >
             <Trash2 size={18} /> Eliminar
@@ -411,38 +416,6 @@ export default function MaquinaDetalle() {
 
       </div>
 
-      {/* MODAL ELIMINAR */}
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 p-6 rounded-3xl w-full max-w-sm text-center shadow-2xl shadow-black/50">
-            <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-              <AlertTriangle size={32} />
-            </div>
-            
-            <h2 className="text-xl font-extrabold text-white mb-2">
-              ¿Eliminar máquina?
-            </h2>
-            <p className="text-slate-400 mb-6 text-sm">
-              Esta acción no se puede deshacer y borrará todo su historial.
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl font-bold transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={eliminarMaquina}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg shadow-red-600/20 transition-all flex justify-center items-center gap-2"
-              >
-                <Trash2 size={16} /> Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

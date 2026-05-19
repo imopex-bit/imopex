@@ -1,4 +1,4 @@
-const API = window.location.hostname === "localhost" 
+const API = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
   ? "http://localhost:3000/api" 
   : "https://imopex.onrender.com/api";
 
@@ -30,8 +30,12 @@ const request = async (endpoint, options = {}) => {
     }
 
     // 🔥 validar JSON seguro
-    const data = await res.json();
-    return data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const data = await res.json();
+      return data;
+    }
+    return await res.text();
 
   } catch (error) {
     console.log("API ERROR:", error.message);

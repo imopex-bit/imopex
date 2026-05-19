@@ -99,53 +99,47 @@ app.get("/api/maquinas/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { data: maquina } = await supabase
+    const { data: maquina, error: errMaq } = await supabase
       .from("maquinas")
-      .select("*")
+      .select(`
+        *,
+        mantenimiento (
+          *,
+          mantenimiento_usuarios (
+            usuarios (nombre)
+          )
+        )
+      `)
       .eq("id", id)
       .maybeSingle();
+
+    if (errMaq) throw errMaq;
 
     if (!maquina) {
       return res.status(404).json({ error: "No existe" });
     }
 
-    const { data: mantenimientos } = await supabase
-      .from("mantenimiento")
-      .select("*")
-      .eq("maquinas_id", id)
-      .order("fecha", { ascending: false });
+    // Formatear mantenimientos para aplanar los nombres de los usuarios responsables
+    const mantenimientosFormateados = (maquina.mantenimiento || []).map(m => {
+      const usuarios = m.mantenimiento_usuarios?.map(mu => mu.usuarios?.nombre).filter(Boolean) || [];
+      const mLimpio = { ...m };
+      delete mLimpio.mantenimiento_usuarios;
+      return {
+        ...mLimpio,
+        usuarios
+      };
+    });
 
-    const resultado = await Promise.all(
-      (mantenimientos || []).map(async (m) => {
+    // Ordenar mantenimientos por fecha de forma descendente
+    mantenimientosFormateados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-        const { data: rel } = await supabase
-          .from("mantenimiento_usuarios")
-          .select("usuarios_id")
-          .eq("mantenimiento_id", m.id);
-
-        const userIds = rel?.map(r => r.usuarios_id) || [];
-
-        let usuarios = [];
-
-        if (userIds.length > 0) {
-          const { data: usersData } = await supabase
-            .from("usuarios")
-            .select("nombre")
-            .in("id", userIds);
-
-          usuarios = usersData?.map(u => u.nombre) || [];
-        }
-
-        return {
-          ...m,
-          usuarios
-        };
-      })
-    );
+    // Eliminar la propiedad 'mantenimiento' anidada original del objeto maquina
+    const maquinaLimpia = { ...maquina };
+    delete maquinaLimpia.mantenimiento;
 
     res.json({
-      ...maquina,
-      mantenimientos: resultado
+      ...maquinaLimpia,
+      mantenimientos: mantenimientosFormateados
     });
 
   } catch (err) {
@@ -173,12 +167,26 @@ app.post("/api/maquinas", authMiddleware, async (req, res) => {
 // ✏️ EDITAR MÁQUINA
 app.put("/api/maquinas/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { estado, localidad } = req.body;
+  const { 
+    estado, 
+    localidad, 
+    descripcion, 
+    serial_maquina, 
+    serial_billetero_1, 
+    serial_billetero_2 
+  } = req.body;
 
   try {
     const { data, error } = await supabase
       .from("maquinas")
-      .update({ estado, localidad })
+      .update({ 
+        estado, 
+        localidad, 
+        descripcion, 
+        serial_maquina, 
+        serial_billetero_1, 
+        serial_billetero_2 
+      })
       .eq("id", id)
       .select();
 
@@ -196,7 +204,7 @@ app.get("/api/usuarios", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("usuarios")
-      .select("id, nombre");
+      .select("*");
 
     if (error) throw error;
 

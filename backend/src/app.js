@@ -22,7 +22,12 @@ app.use(cors({
     // Permite herramientas como Postman o requests sin origin
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
+    // Permite cualquier puerto en localhost o 127.0.0.1 para desarrollo local robusto
+    if (
+      allowedOrigins.includes(origin) || 
+      /^http:\/\/localhost(:\d+)?$/.test(origin) || 
+      /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)
+    ) {
       return callback(null, true);
     }
 

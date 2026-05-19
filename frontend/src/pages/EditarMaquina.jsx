@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Edit3, Save, AlertCircle } from "lucide-react";
 import api from "../api"; // ✅ IMPORT CORRECTO
+import { useAlert } from "../context/AlertContext";
 
 export default function EditarMaquina() {
+  const { showAlert } = useAlert();
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -47,7 +49,7 @@ export default function EditarMaquina() {
 
       } catch (err) {
         console.log(err);
-        alert("Error cargando datos ❌");
+        showAlert("Error cargando datos", "error");
       }
     };
 
@@ -86,12 +88,12 @@ export default function EditarMaquina() {
         serial_billetero_2: serialBilletero2
       });
 
-      alert("Máquina actualizada ✅");
+      showAlert("Máquina actualizada ✅", "success");
       navigate("/dashboard");
 
     } catch (err) {
       console.log(err);
-      alert("Error actualizando ❌");
+      showAlert("Error actualizando ❌", "error");
     } finally {
       setLoading(false);
     }

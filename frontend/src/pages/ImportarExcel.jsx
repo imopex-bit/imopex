@@ -166,20 +166,19 @@ export default function ImportarExcel() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans relative overflow-hidden p-4 sm:p-8">
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans relative overflow-hidden">
       
       {/* Background ambient gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[150px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/10 blur-[150px] rounded-full pointer-events-none"></div>
 
-      <div className="relative z-10 max-w-6xl mx-auto space-y-6">
-        
+      <div className="relative z-10 h-full flex flex-col">
+        <main className="max-w-6xl mx-auto p-4 sm:p-8 space-y-6 flex-1 w-full">
+          
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="p-2 bg-slate-800/50 backdrop-blur-md rounded-xl shadow-sm border border-slate-700/50 hover:text-blue-400 text-slate-400 transition">
-              <ChevronLeft size={24} />
-            </Link>
             <div>
+
               <h1 className="text-3xl font-extrabold text-white">Importación Masiva</h1>
               <p className="text-slate-400">Carga datos desde archivos Excel rápidamente</p>
             </div>
@@ -340,6 +339,7 @@ export default function ImportarExcel() {
             </Link>
           </motion.div>
         )}
+        </main>
       </div>
 
       {/* Modal Ejemplo */}

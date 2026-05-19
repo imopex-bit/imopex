@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
-  Plus, Search, Filter, LogOut, Download, Activity, 
+  Plus, Search, Filter, Download, Activity, 
   Settings, History, Trash2, Eye, Edit3, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,15 +10,29 @@ import ModalEditarMaquina from "../components/ModalEditarMaquina";
 import ModalCrearMaquina from "../components/ModalCrearMaquina";
 import { StatusDonutChart } from "../components/DashboardCharts";
 import api from "../api";
-import logo from "../assets/logo.webp";
+import { useAlert } from "../context/AlertContext";
 
 export default function Index() {
-  const [todas, setTodas] = useState([]);
+  const { showAlert, showConfirm } = useAlert();
+  const [todas, setTodas] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cache_maquinas")) || [];
+    } catch {
+      return [];
+    }
+  });
   const [maquinas, setMaquinas] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroLocalidad, setFiltroLocalidad] = useState("");
+  const [maquinasOperadores, setMaquinasOperadores] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cache_maquinas_operadores")) || {};
+    } catch {
+      return {};
+    }
+  });
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -27,7 +41,14 @@ export default function Index() {
   const [seleccionada, setSeleccionada] = useState(null);
   const [editando, setEditando] = useState(null);
   const [creando, setCreando] = useState(false);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(() => {
+    try {
+      const cache = localStorage.getItem("cache_maquinas");
+      return !cache; // Si hay caché, cargamos en segundo plano sin bloquear la pantalla
+    } catch {
+      return true;
+    }
+  });
 
   const navigate = useNavigate();
 
@@ -50,22 +71,32 @@ export default function Index() {
     };
   }, [todas]);
 
-  const [mantHoy, setMantHoy] = useState(0);
+  const [mantHoy, setMantHoy] = useState(() => {
+    try {
+      return parseInt(localStorage.getItem("cache_mant_hoy")) || 0;
+    } catch {
+      return 0;
+    }
+  });
 
   const cargar = async () => {
-    setCargando(true);
+    setCargando(todas.length === 0); // Solo mostramos spinner si no hay caché
     try {
       const [resMaquinas, resMant] = await Promise.all([
         api.get("/maquinas"),
         api.get("/mantenimiento").catch(() => []) // Evitar que falle si no hay mantenimientos
       ]);
 
-      if (Array.isArray(resMaquinas)) setTodas(resMaquinas);
+      if (Array.isArray(resMaquinas)) {
+        setTodas(resMaquinas);
+        localStorage.setItem("cache_maquinas", JSON.stringify(resMaquinas));
+      }
       
       if (Array.isArray(resMant)) {
         const hoy = new Date().toISOString().split("T")[0];
         const count = resMant.filter(m => String(m.fecha).startsWith(hoy)).length;
         setMantHoy(count);
+        localStorage.setItem("cache_mant_hoy", String(count));
       }
     } catch (err) {
       console.error(err);
@@ -78,18 +109,62 @@ export default function Index() {
     cargar();
   }, []);
 
-  const logout = () => {
-    localStorage.clear();
-    navigate("/");
+
+  const agregarMaquinaLocal = (nuevaMaquina) => {
+    if (nuevaMaquina.operador) {
+      setMaquinasOperadores(prev => {
+        const nuevos = { ...prev, [nuevaMaquina.id || nuevaMaquina.codigo]: nuevaMaquina.operador };
+        localStorage.setItem("cache_maquinas_operadores", JSON.stringify(nuevos));
+        return nuevos;
+      });
+    }
+    setTodas(prevTodas => {
+      const nuevas = [...prevTodas, nuevaMaquina];
+      localStorage.setItem("cache_maquinas", JSON.stringify(nuevas));
+      return nuevas;
+    });
+    cargar(); // Recargar en segundo plano de forma silenciosa para sincronizar
+  };
+
+  const actualizarMaquinaLocal = (maquinaActualizada) => {
+    if (maquinaActualizada.operador !== undefined) {
+      setMaquinasOperadores(prev => {
+        const nuevos = { ...prev, [maquinaActualizada.id]: maquinaActualizada.operador };
+        localStorage.setItem("cache_maquinas_operadores", JSON.stringify(nuevos));
+        return nuevos;
+      });
+    }
+    setTodas(prevTodas => {
+      const nuevas = prevTodas.map(m => m.id === maquinaActualizada.id ? { ...m, ...maquinaActualizada } : m);
+      localStorage.setItem("cache_maquinas", JSON.stringify(nuevas));
+      return nuevas;
+    });
+    cargar(); // Recargar en segundo plano de forma silenciosa para sincronizar
   };
 
   const eliminar = async (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar esta máquina?")) return;
+    const isConfirmed = await showConfirm("¿Estás seguro de eliminar esta máquina?");
+    if (!isConfirmed) return;
+
+    const backup = [...todas];
+
+    // Actualización local inmediata para respuesta instantánea (0ms de retraso percibido)
+    setTodas(prevTodas => {
+      const nuevas = prevTodas.filter(m => m.id !== id);
+      localStorage.setItem("cache_maquinas", JSON.stringify(nuevas));
+      return nuevas;
+    });
+    if (seleccionada?.id === id) setSeleccionada(null);
+
     try {
       await api.delete(`/maquinas/${id}`);
-      cargar();
+      showAlert("Máquina eliminada exitosamente", "success");
+      cargar(); // Sincronización silenciosa en segundo plano
     } catch (err) {
-      alert("Error al eliminar");
+      // Revertir estado si falla en el servidor
+      setTodas(backup);
+      localStorage.setItem("cache_maquinas", JSON.stringify(backup));
+      showAlert("Error al eliminar la máquina en el servidor", "error");
     }
   };
 
@@ -105,6 +180,13 @@ export default function Index() {
     if (filtroTipo) filtradas = filtradas.filter(m => m.tipo_maquina === filtroTipo);
     if (filtroEstado) filtradas = filtradas.filter(m => m.estado === filtroEstado);
     if (filtroLocalidad) filtradas = filtradas.filter(m => m.localidad === filtroLocalidad);
+
+    // Ordenamiento natural (menor a mayor) basado en el número de máquina (código)
+    filtradas.sort((a, b) => {
+      const codA = String(a.codigo || "");
+      const codB = String(b.codigo || "");
+      return codA.localeCompare(codB, undefined, { numeric: true, sensitivity: "base" });
+    });
 
     setMaquinas(filtradas);
     setPaginaActual(1); // Reset a primera página al filtrar
@@ -139,34 +221,6 @@ export default function Index() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/10 blur-[150px] rounded-full pointer-events-none"></div>
 
       <div className="relative z-10 h-full flex flex-col">
-        {/* NAVBAR GLASSMORPHIC */}
-        <nav className="bg-slate-900/60 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-50 shadow-lg shadow-slate-900/20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16 items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <img src={logo} alt="Imopex Logo" className="w-[85%] h-[85%] object-contain relative z-10" />
-                </div>
-                <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">
-                  Imopex
-                </span>
-              </div>
-              <div className="hidden md:flex items-center gap-6">
-                <Link to="/dashboard" className="text-indigo-400 font-bold border-b-2 border-indigo-500 pb-1 mt-1">Dashboard</Link>
-                <Link to="/mantenimientos" className="text-slate-400 hover:text-indigo-300 font-medium transition-colors mt-1">Mantenimientos</Link>
-                <Link to="/repuestos" className="text-slate-400 hover:text-indigo-300 font-medium transition-colors mt-1">Repuestos</Link>
-                <Link to="/importar" className="text-slate-400 hover:text-indigo-300 font-medium transition-colors mt-1">Importar</Link>
-              </div>
-
-              <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-700/50 rounded-xl transition-all shadow-sm">
-                <LogOut size={18} />
-                <span className="hidden sm:inline font-semibold text-sm">Cerrar Sesión</span>
-              </button>
-            </div>
-          </div>
-        </nav>
-
         <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 flex-1 w-full">
           
           {/* DASHBOARD HERO STATS */}
@@ -300,11 +354,12 @@ export default function Index() {
               <table className="w-full text-sm text-left">
                 <thead>
                   <tr className="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-700/50">
-                    <th className="px-6 py-5">Código / ID</th>
+                    <th className="px-6 py-5">Código</th>
                     <th className="px-6 py-5">Info Técnica</th>
                     <th className="px-6 py-5">Tipo</th>
                     <th className="px-6 py-5">Estado</th>
                     <th className="px-6 py-5">Localidad</th>
+                    <th className="px-6 py-5">Operador</th>
                     <th className="px-6 py-5 text-right">Gestión</th>
                   </tr>
                 </thead>
@@ -313,22 +368,28 @@ export default function Index() {
                     <tr key={m.id} className="hover:bg-slate-700/30 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="font-extrabold text-white text-base">{m.codigo}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">#{String(m.id).slice(0, 8)}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-slate-300 text-xs flex items-center gap-2">
                           <span className="text-slate-500">S/N:</span> <span className="font-mono">{m.serial_maquina || "N/A"}</span>
                         </div>
                         <div className="text-slate-400 text-[11px] mt-1 space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter w-5">B1:</span> 
-                            <span className="font-mono">{m.serial_billetero_1 || m.serial_billetero || "N/A"}</span>
-                          </div>
-                          {m.serial_billetero_2 && (
+                          {!m.serial_billetero_2 ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter w-5">B2:</span> 
-                              <span className="font-mono">{m.serial_billetero_2}</span>
+                              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter">Billetero:</span> 
+                              <span className="font-mono">{m.serial_billetero_1 || m.serial_billetero || "N/A"}</span>
                             </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter w-5">B1:</span> 
+                                <span className="font-mono">{m.serial_billetero_1 || m.serial_billetero || "N/A"}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-tighter w-5">B2:</span> 
+                                <span className="font-mono">{m.serial_billetero_2}</span>
+                              </div>
+                            </>
                           )}
                         </div>
                       </td>
@@ -347,6 +408,12 @@ export default function Index() {
                       </td>
                       <td className="px-6 py-4 text-slate-300 font-medium">
                         {m.localidad}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/5 text-indigo-300 border border-indigo-500/10 text-xs font-semibold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                          {maquinasOperadores[m.id] || maquinasOperadores[m.codigo] || "Sin asignar"}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -416,13 +483,13 @@ export default function Index() {
           <ModalEditarMaquina
             maquina={editando}
             onClose={() => setEditando(null)}
-            onUpdated={cargar}
+            onUpdated={actualizarMaquinaLocal}
           />
         )}
         {creando && (
           <ModalCrearMaquina
             onClose={() => setCreando(false)}
-            onCreated={cargar}
+            onCreated={agregarMaquinaLocal}
           />
         )}
       </AnimatePresence>

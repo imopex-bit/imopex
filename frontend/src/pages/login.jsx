@@ -14,6 +14,9 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // 🔥 Precalentamiento del servidor (Render cold start)
+    api.get("/").catch(() => {});
+
     const token = localStorage.getItem("token");
     if (token) {
       navigate("/dashboard");

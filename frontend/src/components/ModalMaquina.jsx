@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Wrench, User, Calendar, Trash2, AlertCircle, Save, Plus, History } from "lucide-react";
 import api from "../api";
+import { useAlert } from "../context/AlertContext";
 
 export default function ModalMaquina({ maquina, onClose }) {
+  const { showAlert, showConfirm } = useAlert();
   const [detalle, setDetalle] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [descripcion, setDescripcion] = useState("");
@@ -11,7 +13,6 @@ export default function ModalMaquina({ maquina, onClose }) {
   const [busqueda, setBusqueda] = useState("");
   const [filtrados, setFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const cargarDetalle = async () => {
     if (!maquina?.id) return;
@@ -79,22 +80,31 @@ export default function ModalMaquina({ maquina, onClose }) {
   };
 
   const eliminarMantenimiento = async (id) => {
-    if (!window.confirm("¿Eliminar mantenimiento?")) return;
+    const isConfirmed = await showConfirm("¿Eliminar mantenimiento?");
+    if (!isConfirmed) return;
     try {
       await api.delete(`/mantenimiento/${id}`);
       await cargarDetalle();
+      showAlert("Mantenimiento eliminado", "success");
     } catch (error) {
       console.log("ERROR ELIMINANDO:", error);
+      showAlert("Error al eliminar", "error");
     }
   };
 
-  const eliminarMaquina = async () => {
+  const handleEliminarMaquinaClick = async () => {
+    const isConfirmed = await showConfirm(
+      `Esta acción eliminará permanentemente la máquina ${maquina.codigo} y todo su historial.`,
+      "¿Confirmar Eliminación?"
+    );
+    if (!isConfirmed) return;
     try {
       await api.delete(`/maquinas/${maquina.id}`);
       onClose();
       window.location.reload();
     } catch (error) {
       console.log("ERROR ELIMINANDO MAQUINA:", error);
+      showAlert("Error al eliminar la máquina", "error");
     }
   };
 
@@ -103,76 +113,89 @@ export default function ModalMaquina({ maquina, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
     >
       <motion.div 
-        initial={{ scale: 0.9, y: 20 }}
+        initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        exit={{ scale: 0.95, y: 20 }}
+        className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-xl text-white">
+            <div className="p-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-xl text-white shadow-md shadow-indigo-500/25">
               <Wrench size={20} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Máquina {maquina.codigo}</h2>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">{maquina.tipo_maquina}</p>
+              <h2 className="text-xl font-bold text-white tracking-tight">Máquina {maquina?.codigo}</h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{maquina?.tipo_maquina}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition text-slate-400">
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white">
             <X size={20} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Status & Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Estado Actual</span>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`w-2 h-2 rounded-full ${maquina.estado === "funcional" ? "bg-emerald-500" : "bg-rose-500"}`} />
-                <span className="font-bold text-slate-700 capitalize">{maquina.estado}</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-950/40 border border-slate-800/80 p-4 rounded-xl shadow-inner">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado Actual</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${maquina?.estado === "funcional" ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                <span className="font-bold text-slate-100 capitalize text-sm">{maquina?.estado}</span>
               </div>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Localidad</span>
-              <p className="font-bold text-slate-700 mt-1">{maquina.localidad}</p>
+            <div className="bg-slate-950/40 border border-slate-800/80 p-4 rounded-xl shadow-inner">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Localidad</span>
+              <p className="font-bold text-slate-100 mt-1.5 text-sm">{maquina?.localidad}</p>
+            </div>
+            <div className="bg-slate-950/40 border border-slate-800/80 p-4 rounded-xl shadow-inner">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operador Asignado</span>
+              <p className="font-bold text-indigo-300 mt-1.5 text-sm">
+                {(() => {
+                  try {
+                    const cachedOps = JSON.parse(localStorage.getItem("cache_maquinas_operadores")) || {};
+                    return cachedOps[maquina.id] || cachedOps[maquina.codigo] || "Sin asignar";
+                  } catch {
+                    return "Sin asignar";
+                  }
+                })()}
+              </p>
             </div>
           </div>
 
           {/* History */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <History size={18} className="text-blue-600" />
-              Historial de Intervenciones
+          <div className="space-y-3">
+            <h3 className="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wide">
+              <History size={16} className="text-indigo-400" />
+              <span>Historial de Intervenciones</span>
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
               {loading ? (
-                <div className="text-center py-8 text-slate-400 italic">Cargando historial...</div>
+                <div className="text-center py-8 text-slate-500 italic text-sm">Cargando historial...</div>
               ) : !detalle?.mantenimientos?.length ? (
-                <div className="text-center py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-sm">
+                <div className="text-center py-8 bg-slate-950/20 rounded-xl border border-dashed border-slate-800 text-slate-500 text-xs uppercase font-bold tracking-wider">
                   No hay registros previos
                 </div>
               ) : (
                 detalle.mantenimientos.map(m => (
-                  <div key={m.id} className="p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition group">
+                  <div key={m.id} className="p-4 bg-slate-950/30 border border-slate-800 rounded-xl hover:border-slate-700/60 transition group">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-indigo-400 flex items-center gap-1">
                         <Calendar size={12} />
                         {new Date(m.fecha).toLocaleDateString()}
                       </span>
-                      <button onClick={() => eliminarMantenimiento(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-rose-400 hover:text-rose-600 transition">
-                        <Trash2 size={14} />
+                      <button onClick={() => eliminarMantenimiento(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-rose-400 hover:text-rose-500 transition rounded hover:bg-slate-800">
+                        <Trash2 size={13} />
                       </button>
                     </div>
-                    <p className="text-sm text-slate-600 mb-3 italic">"{m.descripcion}"</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-sm text-slate-300 mb-3 italic">"{m.descripcion}"</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {m.usuarios?.map((u, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-medium flex items-center gap-1">
-                          <User size={10} /> {u}
+                        <span key={i} className="px-2 py-1 bg-slate-800/80 text-slate-300 border border-slate-700/50 rounded-lg text-[10px] font-semibold flex items-center gap-1 uppercase tracking-wide">
+                          <User size={10} className="text-slate-400" /> {u}
                         </span>
                       ))}
                     </div>
@@ -183,17 +206,17 @@ export default function ModalMaquina({ maquina, onClose }) {
           </div>
 
           {/* New Maintenance Form */}
-          <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4">
-            <h3 className="font-bold text-blue-900 flex items-center gap-2">
-              <Plus size={18} />
-              Registrar Nuevo Mantenimiento
+          <div className="bg-slate-950/25 p-5 rounded-2xl border border-indigo-500/20 space-y-4">
+            <h3 className="font-bold text-indigo-300 flex items-center gap-2 text-sm uppercase tracking-wider">
+              <Plus size={16} />
+              <span>Registrar Nuevo Mantenimiento</span>
             </h3>
             <div className="space-y-3">
               <textarea
                 placeholder="Describa la intervención técnica..."
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
-                className="w-full bg-white border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-500 min-h-[100px] shadow-sm shadow-blue-100"
+                className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder:text-slate-600 rounded-xl p-3.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none min-h-[80px]"
               />
               
               <div className="relative">
@@ -202,7 +225,7 @@ export default function ModalMaquina({ maquina, onClose }) {
                   placeholder="Buscar técnico responsable..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full bg-white border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm shadow-blue-100"
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder:text-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                 />
                 <AnimatePresence>
                   {filtrados.length > 0 && (
@@ -210,10 +233,10 @@ export default function ModalMaquina({ maquina, onClose }) {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 bg-white shadow-xl rounded-xl border border-slate-100 mt-2 z-10 max-h-40 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 bg-slate-900 border border-slate-800 shadow-2xl rounded-xl mt-2 z-10 max-h-40 overflow-y-auto"
                     >
                       {filtrados.map(u => (
-                        <div key={u.id} onClick={() => seleccionarTecnico(u.id)} className="p-3 hover:bg-blue-50 cursor-pointer text-sm text-slate-600 transition">
+                        <div key={u.id} onClick={() => seleccionarTecnico(u.id)} className="p-3 hover:bg-slate-800 cursor-pointer text-sm text-slate-300 transition border-b border-slate-800/80 last:border-0">
                           {u.nombre}
                         </div>
                       ))}
@@ -230,9 +253,9 @@ export default function ModalMaquina({ maquina, onClose }) {
                       key={id} 
                       layout
                       onClick={() => quitarTecnico(id)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold cursor-pointer hover:bg-rose-500 transition flex items-center gap-2"
+                      className="px-3 py-1.5 bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 rounded-xl text-xs font-bold cursor-pointer hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/20 transition-all flex items-center gap-1.5"
                     >
-                      {user?.nombre} <X size={12} />
+                      <span>{user?.nombre}</span> <X size={12} />
                     </motion.span>
                   );
                 })}
@@ -240,58 +263,28 @@ export default function ModalMaquina({ maquina, onClose }) {
 
               <button
                 onClick={guardar}
-                className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+                className="w-full bg-gradient-to-r from-indigo-500 to-cyan-500 text-white py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 <Save size={18} />
-                Guardar Reporte
+                <span>Guardar Reporte</span>
               </button>
             </div>
           </div>
         </div>
-
         {/* Footer */}
-        <div className="p-6 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="p-6 border-t border-slate-800 flex justify-between items-center bg-slate-950/20">
           <button 
-            onClick={() => setConfirmDelete(true)}
-            className="text-rose-500 hover:text-rose-700 text-sm font-bold flex items-center gap-2 transition"
+            onClick={handleEliminarMaquinaClick}
+            className="text-rose-400 hover:text-rose-500 text-sm font-bold flex items-center gap-2 transition hover:underline"
           >
             <Trash2 size={16} />
-            Eliminar Máquina
+            <span>Eliminar Máquina</span>
           </button>
-          <button onClick={onClose} className="px-6 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition text-sm">
+          <button onClick={onClose} className="px-6 py-2.5 bg-slate-800 text-slate-300 rounded-xl font-bold hover:bg-slate-700/80 transition text-sm active:scale-[0.98]">
             Cerrar
           </button>
         </div>
       </motion.div>
-
-      {/* Confirmation Modal */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[110] p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
-            >
-              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle size={32} />
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">¿Confirmar Eliminación?</h2>
-              <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                Esta acción eliminará permanentemente la máquina <span className="font-bold">{maquina.codigo}</span> y todo su historial.
-              </p>
-              <div className="flex gap-3">
-                <button onClick={() => setConfirmDelete(false)} className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-2xl font-bold">Cancelar</button>
-                <button onClick={eliminarMaquina} className="flex-1 px-4 py-3 bg-rose-600 text-white rounded-2xl font-bold shadow-lg shadow-rose-200">Eliminar</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

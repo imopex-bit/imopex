@@ -10,97 +10,51 @@ import ImportarExcel from "./pages/ImportarExcel";
 import Mantenimientos from "./pages/Mantenimientos";
 import Repuestos from "./pages/Repuestos";
 import HistorialRepuestos from "./pages/HistorialRepuestos";
+import Personal from "./pages/Personal";
 
-// 🔐 Protección
+// 🔐 Protección y Contenedor
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
 
 function App() {
   return (
     <Routes>
-
       {/* 🔐 LOGIN */}
       <Route path="/" element={<Login />} />
 
-
-      {/* 📊 DASHBOARD */}
+      {/* 🛡️ RUTAS PROTEGIDAS CON BARRA LATERAL (SIDEBAR) */}
       <Route
-        path="/dashboard"
         element={
           <ProtectedRoute>
-            <Index />
+            <Layout />
           </ProtectedRoute>
         }
-      />
+      >
+        {/* 📊 DASHBOARD */}
+        <Route path="/dashboard" element={<Index />} />
 
-      {/* ➕ CREAR */}
-      <Route
-        path="/crear"
-        element={
-          <ProtectedRoute>
-            <CrearMaquina />
-          </ProtectedRoute>
-        }
-      />
+        {/* ➕ CREAR */}
+        <Route path="/crear" element={<CrearMaquina />} />
 
-      {/* ✏️ EDITAR */}
-      <Route
-        path="/editar/:id"
-        element={
-          <ProtectedRoute>
-            <EditarMaquina />
-          </ProtectedRoute>
-        }
-      />
+        {/* ✏️ EDITAR */}
+        <Route path="/editar/:id" element={<EditarMaquina />} />
 
-      {/* 🔍 DETALLE */}
-      <Route
-        path="/maquina/:id"
-        element={
-          <ProtectedRoute>
-            <MaquinaDetalle />
-          </ProtectedRoute>
-        }
-      />
+        {/* 🔍 DETALLE */}
+        <Route path="/maquina/:id" element={<MaquinaDetalle />} />
 
-      {/* 📥 IMPORTAR */}
-      <Route
-        path="/importar"
-        element={
-          <ProtectedRoute>
-            <ImportarExcel />
-          </ProtectedRoute>
-        }
-      />
+        {/* 📥 IMPORTAR */}
+        <Route path="/importar" element={<ImportarExcel />} />
 
-      {/* 📜 MANTENIMIENTOS */}
-      <Route
-        path="/mantenimientos"
-        element={
-          <ProtectedRoute>
-            <Mantenimientos />
-          </ProtectedRoute>
-        }
-      />
-      
-      {/* 📦 REPUESTOS */}
-      <Route
-        path="/repuestos"
-        element={
-          <ProtectedRoute>
-            <Repuestos />
-          </ProtectedRoute>
-        }
-      />
+        {/* 📜 MANTENIMIENTOS */}
+        <Route path="/mantenimientos" element={<Mantenimientos />} />
+        
+        {/* 📦 REPUESTOS */}
+        <Route path="/repuestos" element={<Repuestos />} />
+        <Route path="/repuestos/historial" element={<HistorialRepuestos />} />
 
-      <Route
-        path="/repuestos/historial"
-        element={
-          <ProtectedRoute>
-            <HistorialRepuestos />
-          </ProtectedRoute>
-        }
-      />
-
+        {/* 👥 PERSONAL (TRABAJADORES) */}
+        <Route path="/personal" element={<Personal />} />
+      </Route>
     </Routes>
   );
 }
