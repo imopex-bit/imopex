@@ -32,8 +32,7 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
 
     // Inicializar operador actual de la máquina desde localStorage
     try {
-      const cachedOps = JSON.parse(localStorage.getItem("cache_maquinas_operadores")) || {};
-      setOperador(cachedOps[maquina.id] || cachedOps[maquina.codigo] || "");
+      setOperador(maquina.operador || "");
     } catch (e) {
       console.error(e);
     }

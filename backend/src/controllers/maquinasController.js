@@ -100,7 +100,7 @@ export const crearMaquina = async (req, res) => {
 // ✏️ EDITAR
 export const editarMaquina = async (req, res) => {
   const { id } = req.params;
-  const { estado, localidad, descripcion, serial_maquina, serial_billetero_1, serial_billetero_2 } = req.body;
+  const { estado, localidad, descripcion, serial_maquina, serial_billetero_1, serial_billetero_2, operador } = req.body;
 
   try {
     const { data, error } = await supabase
@@ -111,7 +111,8 @@ export const editarMaquina = async (req, res) => {
         descripcion, 
         serial_maquina, 
         serial_billetero_1, 
-        serial_billetero_2 
+        serial_billetero_2,
+        operador 
       })
       .eq("id", id)
       .select();
@@ -161,7 +162,7 @@ export const importMaquinas = async (req, res) => {
     // Filtrar solo campos válidos de la tabla máquinas
     const permitidos = [
       "codigo", "tipo_maquina", "estado", "localidad", 
-      "descripcion", "serial_maquina", "serial_billetero_1", "serial_billetero_2"
+      "descripcion", "serial_maquina", "serial_billetero_1", "serial_billetero_2", "operador"
     ];
 
     const maquinasLimpias = maquinas.map(m => {

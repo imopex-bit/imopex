@@ -26,13 +26,7 @@ export default function Index() {
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroLocalidad, setFiltroLocalidad] = useState("");
-  const [maquinasOperadores, setMaquinasOperadores] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("cache_maquinas_operadores")) || {};
-    } catch {
-      return {};
-    }
-  });
+
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -111,13 +105,6 @@ export default function Index() {
 
 
   const agregarMaquinaLocal = (nuevaMaquina) => {
-    if (nuevaMaquina.operador) {
-      setMaquinasOperadores(prev => {
-        const nuevos = { ...prev, [nuevaMaquina.id || nuevaMaquina.codigo]: nuevaMaquina.operador };
-        localStorage.setItem("cache_maquinas_operadores", JSON.stringify(nuevos));
-        return nuevos;
-      });
-    }
     setTodas(prevTodas => {
       const nuevas = [...prevTodas, nuevaMaquina];
       localStorage.setItem("cache_maquinas", JSON.stringify(nuevas));
@@ -127,13 +114,6 @@ export default function Index() {
   };
 
   const actualizarMaquinaLocal = (maquinaActualizada) => {
-    if (maquinaActualizada.operador !== undefined) {
-      setMaquinasOperadores(prev => {
-        const nuevos = { ...prev, [maquinaActualizada.id]: maquinaActualizada.operador };
-        localStorage.setItem("cache_maquinas_operadores", JSON.stringify(nuevos));
-        return nuevos;
-      });
-    }
     setTodas(prevTodas => {
       const nuevas = prevTodas.map(m => m.id === maquinaActualizada.id ? { ...m, ...maquinaActualizada } : m);
       localStorage.setItem("cache_maquinas", JSON.stringify(nuevas));
@@ -412,7 +392,7 @@ export default function Index() {
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/5 text-indigo-300 border border-indigo-500/10 text-xs font-semibold">
                           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                          {maquinasOperadores[m.id] || maquinasOperadores[m.codigo] || "Sin asignar"}
+                          {m.operador || "Sin asignar"}
                         </span>
                       </td>
                       <td className="px-6 py-4">

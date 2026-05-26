@@ -45,7 +45,7 @@ export default function Layout() {
   };
 
   const menuItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/dashboard", label: "Panel", icon: LayoutDashboard },
     { path: "/mantenimientos", label: "Mantenimientos", icon: History },
     { path: "/repuestos", label: "Repuestos", icon: Package },
     { path: "/importar", label: "Importar Excel", icon: UploadCloud },
@@ -113,7 +113,7 @@ export default function Layout() {
       {/* ═══════════════════════════════════════
           LAYOUT BODY: aside + main
           ═══════════════════════════════════════ */}
-      <div className="flex flex-1 relative z-10">
+      <div className="flex flex-1 relative">
 
         {/* ASIDE — visible cuando aside abierto */}
         <AnimatePresence initial={false}>

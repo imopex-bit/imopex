@@ -154,14 +154,7 @@ export default function ModalMaquina({ maquina, onClose }) {
             <div className="bg-slate-950/40 border border-slate-800/80 p-4 rounded-xl shadow-inner">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operador Asignado</span>
               <p className="font-bold text-indigo-300 mt-1.5 text-sm">
-                {(() => {
-                  try {
-                    const cachedOps = JSON.parse(localStorage.getItem("cache_maquinas_operadores")) || {};
-                    return cachedOps[maquina.id] || cachedOps[maquina.codigo] || "Sin asignar";
-                  } catch {
-                    return "Sin asignar";
-                  }
-                })()}
+                {maquina?.operador || "Sin asignar"}
               </p>
             </div>
           </div>
