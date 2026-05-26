@@ -31,6 +31,7 @@ export default function Personal() {
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
   const [celular, setCelular] = useState("");
+  const [email, setEmail] = useState("");
   const [cargo, setCargo] = useState("tecnico"); // 'tecnico', 'operador' o 'supervisor'
 
   // Cargar datos al montar
@@ -59,7 +60,7 @@ export default function Personal() {
             return {
               id: dbU.id,
               nombre: dbU.nombre || "Sin nombre",
-              // Si la BD no tiene el campo (como vimos en consola), lo extrae de lo que editaste localmente
+              email: dbU.email || "",
               cedula: dbU.cedula || dbU.documento || dbU.cc || usuarioEnCache?.cedula || "",
               celular: dbU.celular || dbU.telefono || dbU.phone || usuarioEnCache?.celular || "",
               cargo: (dbU.cargo || dbU.rol || dbU.tipo_usuario || usuarioEnCache?.cargo || "tecnico").toLowerCase(),
@@ -107,6 +108,7 @@ export default function Personal() {
     setNombre("");
     setCedula("");
     setCelular("");
+    setEmail("");
     setCargo("tecnico");
     setModalOpen(true);
   };
@@ -117,44 +119,69 @@ export default function Personal() {
     setNombre(t.nombre);
     setCedula(t.cedula);
     setCelular(t.celular);
+    setEmail(t.email || "");
     setCargo(t.cargo);
     setModalOpen(true);
   };
 
-  // Guardar (Crear o Editar) trabajador con Optimistic UI
+  // Guardar (Crear o Editar) trabajador en la base de datos
   const handleGuardar = async (e) => {
     e.preventDefault();
-    if (!nombre.trim() || !cedula.trim() || !celular.trim()) {
-      showAlert("Por favor completa todos los campos obligatorios", "error");
+    if (!nombre.trim() || !cedula.trim() || !celular.trim() || !email.trim()) {
+      showAlert("Por favor completa todos los campos obligatorios, incluyendo el correo", "error");
       return;
     }
 
-    let nuevas;
-    if (editingTrabajador) {
-      // Editar existente (sea de la BD o local)
-      nuevas = personal.map(t =>
-        t.id === editingTrabajador.id
-          ? { ...t, nombre: nombre.trim(), cedula: cedula.trim(), celular: celular.trim(), cargo }
-          : t
-      );
-      showAlert("Trabajador actualizado con éxito", "success");
-    } else {
-      // Crear nuevo puramente local
-      const nuevo = {
-        id: "loc-" + Date.now(),
-        nombre: nombre.trim(),
-        cedula: cedula.trim(),
-        celular: celular.trim(),
-        cargo,
-        isDbUser: false
-      };
-      nuevas = [...personal, nuevo];
-      showAlert("Trabajador registrado con éxito", "success");
-    }
+    try {
+      if (editingTrabajador && editingTrabajador.isDbUser !== false) {
+        // Editar existente en la BD
+        const { data } = await api.put(`/usuarios/${editingTrabajador.id}`, {
+          nombre: nombre.trim(),
+          cedula: cedula.trim(),
+          celular: celular.trim(),
+          email: email.trim(),
+          cargo
+        });
+        
+        const nuevas = personal.map(t =>
+          t.id === editingTrabajador.id
+            ? { ...t, nombre: nombre.trim(), cedula: cedula.trim(), celular: celular.trim(), email: email.trim(), cargo }
+            : t
+        );
+        setPersonal(nuevas);
+        localStorage.setItem("cache_personal", JSON.stringify(nuevas));
+        showAlert("Trabajador actualizado con éxito", "success");
+      } else {
+        // Crear nuevo en la BD
+        const response = await api.post("/usuarios", {
+          nombre: nombre.trim(),
+          cedula: cedula.trim(),
+          celular: celular.trim(),
+          email: email.trim(),
+          cargo
+        });
+        
+        const nuevo = response.data?.[0] || response.data || {
+          id: "db-" + Date.now(),
+          nombre: nombre.trim(),
+          cedula: cedula.trim(),
+          celular: celular.trim(),
+          email: email.trim(),
+          cargo,
+          isDbUser: true
+        };
+        nuevo.isDbUser = true;
 
-    setPersonal(nuevas);
-    localStorage.setItem("cache_personal", JSON.stringify(nuevas));
-    setModalOpen(false);
+        const nuevas = [...personal, nuevo];
+        setPersonal(nuevas);
+        localStorage.setItem("cache_personal", JSON.stringify(nuevas));
+        showAlert("Trabajador registrado con éxito en la base de datos", "success");
+      }
+      setModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      showAlert("Error al guardar en la base de datos", "error");
+    }
   };
 
   // Eliminar trabajador
@@ -164,10 +191,19 @@ export default function Personal() {
     );
     if (!isConfirmed) return;
 
-    const nuevas = personal.filter(item => item.id !== t.id);
-    setPersonal(nuevas);
-    localStorage.setItem("cache_personal", JSON.stringify(nuevas));
-    showAlert("Trabajador eliminado exitosamente", "success");
+    try {
+      if (t.isDbUser !== false && !String(t.id).startsWith("loc-")) {
+        await api.delete(`/usuarios/${t.id}`);
+      }
+      
+      const nuevas = personal.filter(item => item.id !== t.id);
+      setPersonal(nuevas);
+      localStorage.setItem("cache_personal", JSON.stringify(nuevas));
+      showAlert("Trabajador eliminado exitosamente", "success");
+    } catch (error) {
+      console.error(error);
+      showAlert("Error al eliminar de la base de datos", "error");
+    }
   };
 
   return (
@@ -376,6 +412,22 @@ export default function Personal() {
                       placeholder="Ej. 100234567"
                       value={cedula}
                       onChange={(e) => setCedula(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Correo Electrónico</label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">@</div>
+                    <input
+                      type="email"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-950/50 border border-slate-800 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white outline-none"
+                      placeholder="Ej. usuario@correo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
