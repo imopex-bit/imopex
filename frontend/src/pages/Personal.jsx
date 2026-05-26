@@ -321,16 +321,16 @@ export default function Personal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col"
+              className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               {/* Header */}
-              <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20">
+              <div className="p-4 sm:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-xl text-white">
                     <Users size={20} />
@@ -348,7 +348,7 @@ export default function Personal() {
               </div>
 
               {/* Form Body */}
-              <form onSubmit={handleGuardar} className="p-6 space-y-4">
+              <form onSubmit={handleGuardar} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
                 {/* Nombre */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Nombre Completo</label>

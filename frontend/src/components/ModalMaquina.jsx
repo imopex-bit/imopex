@@ -113,7 +113,7 @@ export default function ModalMaquina({ maquina, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
     >
       <motion.div 
         initial={{ scale: 0.95, y: 20 }}
@@ -122,7 +122,7 @@ export default function ModalMaquina({ maquina, onClose }) {
         className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20">
+        <div className="p-4 sm:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-xl text-white shadow-md shadow-indigo-500/25">
               <Wrench size={20} />
@@ -137,9 +137,9 @@ export default function ModalMaquina({ maquina, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 min-h-0">
           {/* Status & Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-slate-950/40 border border-slate-800/80 p-4 rounded-xl shadow-inner">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado Actual</span>
               <div className="flex items-center gap-2 mt-1.5">
@@ -272,7 +272,7 @@ export default function ModalMaquina({ maquina, onClose }) {
           </div>
         </div>
         {/* Footer */}
-        <div className="p-6 border-t border-slate-800 flex justify-between items-center bg-slate-950/20">
+        <div className="p-4 sm:p-6 border-t border-slate-800 flex justify-between items-center bg-slate-950/20 shrink-0">
           <button 
             onClick={handleEliminarMaquinaClick}
             className="text-rose-400 hover:text-rose-500 text-sm font-bold flex items-center gap-2 transition hover:underline"

@@ -103,15 +103,15 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
     >
       <motion.div 
         initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 20 }}
-        className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden"
+        className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20">
+        <div className="p-4 sm:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-xl text-white shadow-md shadow-indigo-500/25">
               <Edit3 size={20} />
@@ -123,9 +123,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Serial Máquina</label>
                 <div className="relative">
@@ -283,8 +283,9 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               />
             </div>
           </div>
+        </div>
 
-          <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 shrink-0 p-4 sm:p-6 border-t border-slate-800 bg-slate-950/20">
             <button onClick={onClose} className="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700/80 text-slate-300 rounded-xl font-bold transition active:scale-[0.98]">
               Cancelar
             </button>
@@ -295,7 +296,6 @@ export default function ModalEditarMaquina({ maquina, onClose, onUpdated }) {
               <Save size={18} />
               <span>Actualizar</span>
             </button>
-          </div>
         </div>
       </motion.div>
     </motion.div>

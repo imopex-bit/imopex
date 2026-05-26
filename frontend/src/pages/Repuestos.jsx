@@ -468,9 +468,9 @@ export default function Repuestos() {
 
       {/* 🚀 MODAL NUEVO/EDITAR REPUESTO */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-800 border border-slate-700 w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden my-auto">
-            <div className="p-8 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-800 border border-slate-700 w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh]">
+            <div className="p-4 sm:p-8 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{editMode ? "Actualizar" : "Nuevo"} Repuesto</h2>
                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Completa los campos técnicos abajo</p>
@@ -478,7 +478,7 @@ export default function Repuestos() {
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-700 rounded-full text-slate-400 transition-all"><X size={24}/></button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-8 space-y-8">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-8 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 {/* Panel Izquierdo */}
                 <div className="space-y-6">
@@ -529,9 +529,9 @@ export default function Repuestos() {
 
       {/* MODAL MOVIMIENTO RÁPIDO (INDIVIDUAL) */}
       {showQuickMovModal && (
-        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[60] flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-800 border border-slate-700 w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden my-auto">
-            <div className={`p-6 border-b border-slate-700 flex justify-between items-center ${quickMovData.tipo === 'entrada' ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
+        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[210] flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-800 border border-slate-700 w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh]">
+            <div className={`p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center shrink-0 ${quickMovData.tipo === 'entrada' ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
               <div>
                 <h2 className="text-xl font-black text-white uppercase tracking-tighter">
                   {quickMovData.tipo === "entrada" ? "Registrar Entrada" : "Registrar Salida"}
@@ -543,7 +543,7 @@ export default function Repuestos() {
               <button onClick={() => setShowQuickMovModal(false)} className="p-2 hover:bg-slate-700 rounded-full text-slate-400 transition-all"><X size={24}/></button>
             </div>
             
-            <form onSubmit={handleQuickMovSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleQuickMovSubmit} className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
               <div>
                 <label className="block text-xs font-black text-slate-500 uppercase mb-2 ml-1">
                   ¿Cuántos {quickMovData.tipo === "entrada" ? "entran" : "salen"}?

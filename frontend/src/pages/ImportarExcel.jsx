@@ -345,7 +345,7 @@ export default function ImportarExcel() {
       {/* Modal Ejemplo */}
       <AnimatePresence>
         {showExample && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
@@ -353,9 +353,9 @@ export default function ImportarExcel() {
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-slate-800 border border-slate-700 rounded-3xl w-full max-w-3xl shadow-2xl relative z-10 overflow-hidden"
+              className="bg-slate-800 border border-slate-700 rounded-3xl w-full max-w-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+              <div className="p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center shrink-0">
                 <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
                   <Download size={20} className="text-indigo-400" />
                   Ejemplo Estructura: {importType === "maquinas" ? "Máquinas" : "Repuestos"}
@@ -364,7 +364,7 @@ export default function ImportarExcel() {
                   <Check className="rotate-45" size={24} />
                 </button>
               </div>
-              <div className="p-6 overflow-x-auto">
+              <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
                 <table className="w-full text-[10px] text-left border border-slate-700/50 rounded-lg overflow-hidden">
                   <thead className="bg-slate-900 text-slate-400 uppercase">
                     <tr>
@@ -421,7 +421,7 @@ export default function ImportarExcel() {
                   </tbody>
                 </table>
               </div>
-              <div className="p-6 bg-slate-900/50 border-t border-slate-700 text-right">
+              <div className="p-4 sm:p-6 bg-slate-900/50 border-t border-slate-700 text-right shrink-0">
                 <button 
                   onClick={() => setShowExample(false)}
                   className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold text-sm"

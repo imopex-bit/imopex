@@ -88,14 +88,14 @@ export default function ModalCrearMantenimiento({ onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden"
+        className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20">
+        <div className="p-4 sm:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/20 shrink-0">
           <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
             <div className="p-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-xl text-white shadow-md shadow-indigo-500/25">
               <Wrench size={20} />
@@ -107,7 +107,7 @@ export default function ModalCrearMantenimiento({ onClose, onCreated }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           
           {/* SELECCIÓN DE MÁQUINA */}
           <div className="space-y-2">
